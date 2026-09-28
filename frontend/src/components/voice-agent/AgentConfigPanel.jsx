@@ -1,28 +1,8 @@
-import { useEffect, useId, useRef, useState } from "react";
-import {
-  BEHAVIORS,
-  CUSTOM,
-  INDUSTRIES,
-  LANGUAGES,
-  LIMITS,
-  OTHER,
-  TARGET_USERS,
-  TASK_SUGGESTIONS,
-  normalizeConfig,
-  validateConfig,
-} from "../../runtime/agentConfig.js";
-import { useSpeechVoices, voiceSupport } from "../../runtime/useVoice.js";
+import { useEffect, useRef, useState } from "react";
+import { LIMITS, normalizeLabel, validateLabel } from "../../runtime/agentConfig.js";
+import { LIMITS as CL, normalizeConnection, validateConnection } from "../../runtime/livekit/connection.js";
 
-// Fields in the order they appear, so the first invalid one can take focus.
-const FIELD_ORDER = [
-  "industry",
-  "industryOther",
-  "agentName",
-  "role",
-  "purpose",
-  "behaviorCustom",
-  "languageOther",
-];
+const CONNECTION_FIELDS = ["tokenEndpoint", "url"];
 
 function Field({ id, label, required, hint, error, children }) {
   return (
@@ -46,105 +26,22 @@ function Field({ id, label, required, hint, error, children }) {
   );
 }
 
-// Toggle chips for known choices. With `allowCustom`, the operator can also add
-// their own; those show as chips too and can be removed.
-function ChipPicker({ label, options, value, onChange, allowCustom = false, customLabel, max = LIMITS.chips }) {
-  const labelId = useId();
-  const inputId = useId();
-  const [draft, setDraft] = useState("");
-
-  const has = (item) => value.some((entry) => entry.toLowerCase() === item.toLowerCase());
-  const toggle = (item) =>
-    onChange(has(item) ? value.filter((entry) => entry.toLowerCase() !== item.toLowerCase()) : [...value, item]);
-  const custom = value.filter((item) => !options.includes(item));
-  const full = value.length >= max;
-
-  const add = () => {
-    const item = draft.trim().slice(0, LIMITS.short);
-
-    if (item && !has(item) && !full) onChange([...value, item]);
-    setDraft("");
-  };
-
-  return (
-    <div className="config-field">
-      <span className="config-label" id={labelId}>
-        {label}
-      </span>
-
-      <div className="config-chips" role="group" aria-labelledby={labelId}>
-        {options.map((item) => (
-          <button
-            type="button"
-            key={item}
-            className={`config-chip ${has(item) ? "is-on" : ""}`}
-            aria-pressed={has(item)}
-            onClick={() => toggle(item)}
-            disabled={full && !has(item)}
-          >
-            {has(item) && <span aria-hidden="true">✓ </span>}
-            {item}
-          </button>
-        ))}
-
-        {custom.map((item) => (
-          <button
-            type="button"
-            key={item}
-            className="config-chip is-on"
-            aria-label={`Убрать «${item}»`}
-            onClick={() => toggle(item)}
-          >
-            <span aria-hidden="true">✓ </span>
-            {item}
-            <span aria-hidden="true"> ×</span>
-          </button>
-        ))}
-      </div>
-
-      {allowCustom && (
-        <div className="config-add">
-          <input
-            id={inputId}
-            type="text"
-            value={draft}
-            maxLength={LIMITS.short}
-            placeholder={customLabel}
-            aria-label={customLabel}
-            disabled={full}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault(); // Enter adds a chip, it does not save the form
-                add();
-              }
-            }}
-          />
-          <button type="button" className="config-add-button" onClick={add} disabled={!draft.trim() || full}>
-            Добавить
-          </button>
-        </div>
-      )}
-
-      {full && <p className="config-hint">Не более {max} значений.</p>}
-    </div>
-  );
-}
-
-export default function AgentConfigPanel({ initial, onSave, onCancel, saving = false, saveError = null, offline = false }) {
+// Two things to get right, and they fail for different reasons.
+//
+//   "Подключение" - can this browser reach a LiveKit agent at all. The endpoint ships
+//   with the app and answers on /api/livekit/token; the only thing it needs is a grant.
+//   "Агент"       - what to call it in this console. A label, not a configuration: the
+//   endpoint decides which agent answers, and there is nothing here that changes it.
+export default function AgentConfigPanel({ label, connection, onSaveLabel, onSaveConnection, onCancel }) {
   const dialogRef = useRef(null);
-  const [form, setForm] = useState(() => normalizeConfig(initial));
-  // Errors appear once the operator tries to save, then follow their edits.
-  const [attempted, setAttempted] = useState(false);
-  // The voice list is the browser's own synthesis voices. With a LiveKit agent the
-  // voice is chosen on the agent side, so this is a hint rather than a control that
-  // changes anything the console can see.
-  const voices = useSpeechVoices();
+  const [agent, setAgent] = useState(() => normalizeLabel(label));
+  const [agentAttempted, setAgentAttempted] = useState(false);
+  const [link, setLink] = useState(() => normalizeConnection(connection));
+  const [linkAttempted, setLinkAttempted] = useState(false);
+  const [saved, setSaved] = useState(null);
 
-  const errors = attempted ? validateConfig(form) : {};
-
-  const set = (key) => (event) => setForm({ ...form, [key]: event.target.value });
-  const setList = (key) => (value) => setForm({ ...form, [key]: value });
+  const agentErrors = agentAttempted ? validateLabel(agent) : {};
+  const linkErrors = linkAttempted ? validateConnection(link) : {};
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -153,49 +50,64 @@ export default function AgentConfigPanel({ initial, onSave, onCancel, saving = f
     if (dialog && !dialog.open) dialog.showModal();
   }, []);
 
+  const setAgentField = (key) => (event) => setAgent({ ...agent, [key]: event.target.value });
+  const setLinkField = (key) => (event) => setLink({ ...link, [key]: event.target.value });
+
+  // A nested <form> is invalid HTML, so each half saves from its own handler.
+  const saveLink = () => {
+    setLinkAttempted(true);
+
+    const problems = validateConnection(link);
+    const first = CONNECTION_FIELDS.find((key) => problems[key]) ?? Object.keys(problems)[0];
+
+    if (first) {
+      dialogRef.current.querySelector(`[name="lk-${first}"]`)?.focus();
+      return;
+    }
+
+    onSaveConnection(link);
+    setLink(normalizeConnection(link));
+    setSaved("connection");
+  };
+
   const submit = (event) => {
     event.preventDefault();
-    setAttempted(true);
+    setAgentAttempted(true);
 
-    const problems = validateConfig(form);
-    const first = FIELD_ORDER.find((key) => problems[key]);
+    const problems = validateLabel(agent);
+    const first = Object.keys(problems)[0];
 
     if (first) {
       dialogRef.current.querySelector(`[name="${first}"]`)?.focus();
       return;
     }
 
-    // The form stays open, and what was typed stays right here, until onSave confirms it
-    // actually reached the server (or that there is no server to reach).
-    onSave(normalizeConfig(form));
+    onSaveLabel(agent);
+    setAgent(normalizeLabel(agent));
+    setSaved("label");
   };
 
-  // Shared attributes that tie an input to its label's error or hint.
-  const attrs = (key, hint) => ({
+  const agentAttrs = (key, hint) => ({
     name: key,
     id: `config-${key}`,
-    "aria-invalid": errors[key] ? true : undefined,
-    "aria-describedby": errors[key] || hint ? `config-${key}-note` : undefined,
+    "aria-invalid": agentErrors[key] ? true : undefined,
+    "aria-describedby": agentErrors[key] || hint ? `config-${key}-note` : undefined,
   });
 
-  const toggleBehavior = (item) => {
-    const chosen = form.conversationBehavior;
-
-    setList("conversationBehavior")(
-      chosen.includes(item) ? chosen.filter((entry) => entry !== item) : [...chosen, item]
-    );
-  };
-
-  const sortedVoices = [...voices].sort((a, b) => a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name));
-  const savedVoiceMissing = form.voice && !voices.some((voice) => voice.name === form.voice);
+  const linkAttrs = (key, hint) => ({
+    name: `lk-${key}`,
+    id: `config-lk-${key}`,
+    "aria-invalid": linkErrors[key] ? true : undefined,
+    "aria-describedby": linkErrors[key] || hint ? `config-lk-${key}-note` : undefined,
+  });
 
   return (
     <dialog ref={dialogRef} className="config-dialog" aria-labelledby="config-title" onClose={onCancel}>
       <form className="config-form" onSubmit={submit} noValidate>
         <header className="config-header">
           <div>
-            <h2 id="config-title">Сценарий применения и настройка агента</h2>
-            <p>Опишите, что должен делать ваш голосовой агент.</p>
+            <h2 id="config-title">Подключение к LiveKit</h2>
+            <p>Куда подключаться и как называть агента в этой консоли.</p>
           </div>
           <button type="button" className="config-close" aria-label="Закрыть без сохранения" onClick={onCancel}>
             ×
@@ -203,250 +115,137 @@ export default function AgentConfigPanel({ initial, onSave, onCancel, saving = f
         </header>
 
         <div className="config-body">
-          <section aria-labelledby="config-use-case">
-            <h3 id="config-use-case">Сценарий применения</h3>
-
-            <Field id="config-industry" label="Сценарий применения / отрасль" required error={errors.industry}>
-              <select {...attrs("industry")} value={form.industry} onChange={set("industry")}>
-                <option value="">Выберите сценарий...</option>
-                {INDUSTRIES.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
-            {form.industry === OTHER && (
-              <Field
-                id="config-industryOther"
-                label="Ваш сценарий применения / отрасль"
-                required
-                error={errors.industryOther}
-              >
-                <input
-                  {...attrs("industryOther")}
-                  type="text"
-                  value={form.industryOther}
-                  maxLength={LIMITS.short}
-                  placeholder="например, «Техническое обслуживание»"
-                  onChange={set("industryOther")}
-                />
-              </Field>
-            )}
-
-            <div className="config-row">
-              <Field id="config-agentName" label="Название агента" required error={errors.agentName}>
-                <input
-                  {...attrs("agentName")}
-                  type="text"
-                  value={form.agentName}
-                  maxLength={LIMITS.agentName}
-                  placeholder="например, АссистентПортал"
-                  onChange={set("agentName")}
-                />
-              </Field>
-
-              <Field id="config-role" label="Роль агента" required error={errors.role}>
-                <input
-                  {...attrs("role")}
-                  type="text"
-                  value={form.role}
-                  maxLength={LIMITS.role}
-                  placeholder="Какую роль должен выполнять агент?"
-                  onChange={set("role")}
-                />
-              </Field>
-            </div>
-          </section>
-
-          <section aria-labelledby="config-purpose-heading">
-            <h3 id="config-purpose-heading">Назначение и пользователи</h3>
+          <section aria-labelledby="config-connection">
+            <h3 id="config-connection">Подключение</h3>
 
             <Field
-              id="config-purpose"
-              label="Назначение агента"
+              id="config-lk-tokenEndpoint"
+              label="Эндпоинт токенов"
               required
-              error={errors.purpose}
-              hint={`${form.purpose.length}/${LIMITS.purpose}`}
+              error={linkErrors.tokenEndpoint}
+              hint="По умолчанию /api/livekit/token — он поставляется вместе с приложением. Укажите полный URL, только если сервис токенов живёт на другом хосте и разрешает CORS для этого сайта."
             >
-              <textarea
-                {...attrs("purpose", true)}
-                rows={3}
-                value={form.purpose}
-                maxLength={LIMITS.purpose}
-                placeholder="В чём этот агент должен помогать пользователям?"
-                onChange={set("purpose")}
+              <input
+                {...linkAttrs("tokenEndpoint", true)}
+                type="text"
+                value={link.tokenEndpoint}
+                maxLength={CL.tokenEndpoint}
+                placeholder="/api/livekit/token"
+                onChange={setLinkField("tokenEndpoint")}
               />
             </Field>
-
-            <ChipPicker
-              label="Целевые пользователи"
-              options={TARGET_USERS}
-              value={form.targetUsers}
-              onChange={setList("targetUsers")}
-              allowCustom
-              customLabel="Добавить тип пользователя"
-            />
-
-            <ChipPicker
-              label="Основные задачи"
-              options={TASK_SUGGESTIONS}
-              value={form.primaryTasks}
-              onChange={setList("primaryTasks")}
-              allowCustom
-              customLabel="Добавить задачу"
-            />
-          </section>
-
-          <section aria-labelledby="config-context">
-            <h3 id="config-context">Отраслевой контекст</h3>
-
-            <Field id="config-domainContext" label="Отраслевой и бизнес-контекст">
-              <textarea
-                {...attrs("domainContext")}
-                rows={4}
-                value={form.domainContext}
-                maxLength={LIMITS.domainContext}
-                placeholder="Опишите отраслевой или бизнес-контекст, который агент должен понимать."
-                onChange={set("domainContext")}
-              />
-            </Field>
-          </section>
-
-          <section aria-labelledby="config-conversation">
-            <h3 id="config-conversation">Стиль общения</h3>
-
-            <div className="config-field">
-              <span className="config-label" id="config-behavior-label">
-                Поведение в разговоре
-              </span>
-              <div className="config-chips" role="group" aria-labelledby="config-behavior-label">
-                {BEHAVIORS.map((item) => {
-                  const chosen = form.conversationBehavior.includes(item);
-
-                  return (
-                    <button
-                      type="button"
-                      key={item}
-                      className={`config-chip ${chosen ? "is-on" : ""}`}
-                      aria-pressed={chosen}
-                      onClick={() => toggleBehavior(item)}
-                    >
-                      {chosen && <span aria-hidden="true">✓ </span>}
-                      {item}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {form.conversationBehavior.includes(CUSTOM) && (
-              <Field
-                id="config-behaviorCustom"
-                label="Собственное поведение"
-                required
-                error={errors.behaviorCustom}
-              >
-                <input
-                  {...attrs("behaviorCustom")}
-                  type="text"
-                  value={form.behaviorCustom}
-                  maxLength={LIMITS.short}
-                  placeholder="например, «Спокойно и с обоснованием»"
-                  onChange={set("behaviorCustom")}
-                />
-              </Field>
-            )}
 
             <div className="config-row">
-              <Field id="config-language" label="Язык общения">
-                <select {...attrs("language")} value={form.language} onChange={set("language")}>
-                  {LANGUAGES.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
+              <Field
+                id="config-lk-participantName"
+                label="Ваше имя в звонке"
+                hint="Так вас увидит агент. Оставьте пустым — будет «Оператор»."
+              >
+                <input
+                  {...linkAttrs("participantName", true)}
+                  type="text"
+                  value={link.participantName}
+                  maxLength={CL.participantName}
+                  placeholder="Оператор"
+                  onChange={setLinkField("participantName")}
+                />
               </Field>
 
               <Field
-                id="config-voice"
-                label="Голос"
-                hint={
-                  voiceSupport.synthesis
-                    ? "Голоса, установленные в этом браузере. Голос агента LiveKit задаётся на стороне агента."
-                    : "Озвучивание в этом браузере недоступно."
-                }
+                id="config-lk-url"
+                label="Адрес LiveKit"
+                error={linkErrors.url}
+                hint="Нужен только вместе с готовым токеном: эндпоинт свой адрес возвращает сам."
               >
-                <select {...attrs("voice", true)} value={form.voice} disabled={!voiceSupport.synthesis} onChange={set("voice")}>
-                  <option value="">Автоматически (по умолчанию)</option>
-                  {savedVoiceMissing && (
-                    <option value={form.voice}>
-                      {form.voice} (недоступен здесь)
-                    </option>
-                  )}
-                  {sortedVoices.map((voice) => (
-                    <option key={voice.voiceURI} value={voice.name}>
-                      {voice.name} ({voice.lang})
-                    </option>
-                  ))}
-                </select>
+                <input
+                  {...linkAttrs("url", true)}
+                  type="text"
+                  value={link.url}
+                  maxLength={CL.url}
+                  placeholder="wss://your-project.livekit.cloud"
+                  onChange={setLinkField("url")}
+                />
               </Field>
             </div>
 
-            {form.language === OTHER && (
-              <Field id="config-languageOther" label="Ваш язык" required error={errors.languageOther}>
-                <input
-                  {...attrs("languageOther")}
-                  type="text"
-                  value={form.languageOther}
-                  maxLength={LIMITS.short}
-                  placeholder="например, татарский"
-                  onChange={set("languageOther")}
-                />
-              </Field>
-            )}
+            <Field
+              id="config-lk-token"
+              label="Готовый токен (запасной вариант)"
+              hint="Используется, только если эндпоинт пуст. Токен одноразовый и имеет срок действия — это способ указать руками, а не рабочий режим."
+            >
+              <input
+                {...linkAttrs("token", true)}
+                type="text"
+                value={link.token}
+                maxLength={CL.token}
+                placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…"
+                onChange={setLinkField("token")}
+              />
+            </Field>
+
+            <div className="config-footer-inline">
+              <p className="config-note" role="status">
+                {saved === "connection" ? "✓ Подключение сохранено" : "Ключ и секрет хранятся только на сервере."}
+              </p>
+              <button type="button" className="config-save" onClick={saveLink}>
+                Сохранить подключение
+              </button>
+            </div>
           </section>
 
-          <section aria-labelledby="config-instructions">
-            <h3 id="config-instructions">Дополнительные указания</h3>
+          <section aria-labelledby="config-agent">
+            <h3 id="config-agent">Агент</h3>
 
-            <Field
-              id="config-additionalInstructions"
-              label="Дополнительные указания"
-              hint={`Необязательно. ${form.additionalInstructions.length}/${LIMITS.additionalInstructions}`}
-            >
+            <p className="config-hint">
+              Это подпись для консоли: она попадает в заголовок записи звонка и в приветствие. Кто именно
+              отвечает на линии, задаёт эндпоинт токенов (переменная LIVEKIT_AGENT_NAME) — из браузера это
+              изменить нельзя и не нужно.
+            </p>
+
+            <Field id="config-agentName" label="Название агента" required error={agentErrors.agentName}>
+              <input
+                {...agentAttrs("agentName")}
+                type="text"
+                value={agent.agentName}
+                maxLength={LIMITS.agentName}
+                placeholder="Ассистент Портал"
+                onChange={setAgentField("agentName")}
+              />
+            </Field>
+
+            <Field id="config-role" label="Роль" hint="Например: Координатор приёма">
+              <input
+                {...agentAttrs("role", true)}
+                type="text"
+                value={agent.role}
+                maxLength={LIMITS.role}
+                onChange={setAgentField("role")}
+              />
+            </Field>
+
+            <Field id="config-purpose" label="Назначение" hint={`${agent.purpose.length}/${LIMITS.purpose}`}>
               <textarea
-                {...attrs("additionalInstructions", true)}
-                rows={4}
-                value={form.additionalInstructions}
-                maxLength={LIMITS.additionalInstructions}
-                placeholder="Добавьте правила, ограничения или особенности поведения..."
-                onChange={set("additionalInstructions")}
+                {...agentAttrs("purpose", true)}
+                rows={3}
+                value={agent.purpose}
+                maxLength={LIMITS.purpose}
+                placeholder="Записывает на приём и переносит его по звонку."
+                onChange={setAgentField("purpose")}
               />
             </Field>
           </section>
         </div>
 
         <footer className="config-footer">
-          {saveError ? (
-            <p className="config-error" role="alert">
-              ⚠ {saveError}
-            </p>
-          ) : (
-            <p className="config-note">
-              {offline
-                ? "Сервер сейчас недоступен, поэтому настройка сохраняется только в этом браузере."
-                : "Сохранено в конфигурации агента вашей организации."}
-            </p>
-          )}
+          <p className="config-note" role="status">
+            {saved === "label" ? "✓ Агент сохранён" : "Всё на этой панели хранится только в этом браузере."}
+          </p>
           <div className="config-actions">
-            <button type="button" className="config-cancel" onClick={onCancel} disabled={saving}>
-              Отмена
+            <button type="button" className="config-cancel" onClick={onCancel}>
+              Закрыть
             </button>
-            <button type="submit" className="config-save" disabled={saving}>
-              {saving ? "Сохраняем…" : "Сохранить настройку"}
+            <button type="submit" className="config-save">
+              Сохранить агента
             </button>
           </div>
         </footer>

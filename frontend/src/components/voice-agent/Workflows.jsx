@@ -1,121 +1,79 @@
 import { useCallback, useEffect, useState } from "react";
 import StatusBadge from "./StatusBadge";
 import ScrollReveal from "./ScrollReveal";
-import { fetchAgents } from "../../runtime/agents.js";
-import { fetchContacts } from "../../runtime/contacts.js";
+import { readContacts } from "../../runtime/contacts.js";
 import {
-  checkWorkflowEligibility,
+  REFERENCE_FIELDS,
+  STATUS_LABEL,
+  STATUS_OPTIONS,
+  STATUS_TONE,
+  TRIGGER_TYPES,
   createWorkflow,
   deleteWorkflow,
-  fetchWorkflows,
-  triggerWorkflow,
+  evaluateWorkflow,
+  readWorkflows,
+  runWorkflow,
   updateWorkflow,
 } from "../../runtime/workflows.js";
 
-// The server stores these codes; the operator reads them in Russian.
-const STATUS_OPTIONS = ["draft", "active", "paused", "archived"];
-const STATUS_LABEL = { draft: "черновик", active: "активен", paused: "приостановлен", archived: "в архиве" };
-const STATUS_TONE = { active: "ok", draft: "info", paused: "warn", archived: "warn" };
-
-// The engine's only supported trigger (app/workflows/triggers.py's TRIGGERS dict has exactly one
-// entry: "date_offset"). Any other trigger_type is refused by evaluate_trigger() as
-// UNSUPPORTED_TRIGGER_TYPE - not just for the scheduler, but for the manual "Run now" button too
-// (both call the same evaluate_workflow()), so a workflow saved with one could never actually run
-// either way. The form only ever offers what can really work.
-const TRIGGER_TYPES = [{ id: "date_offset", label: "Смещение по дате (дата в карточке контакта + N дней)" }];
-
-const PROFILES_FOR_FORM = [
-  { id: "underwriting", name: "Анкетирование и лизинг" },
-  { id: "bank", name: "Банковское обслуживание" },
-  { id: "insurance", name: "Страховая служба" },
-  { id: "telecom", name: "Поддержка связи" },
-  { id: "admissions", name: "Приёмная комиссия" },
-];
-
-// One form, reused for "add a workflow" (initial is null) and "edit this one". The two JSON
-// blobs the engine reads - trigger_config (when it fires) and action_config (what it does) - are
-// edited as plain fields, assembled back into the model's own object shapes. conditions stays
-// [] (the engine stops on any condition as unsupported) and retry_policy stays {}.
-function WorkflowForm({ agents, initial, profiles, onSaved, onCancel }) {
+// One form, reused for "add a workflow" (initial is null) and "edit this one". The two
+// blobs the trigger reads - when it fires and what it does - are edited as plain fields
+// and assembled back into the record's own shape. Nothing here is stored that this app
+// could not later evaluate.
+function WorkflowForm({ initial, onSaved, onCancel }) {
   const [form, setForm] = useState(() => ({
     name: initial?.name ?? "",
-    agentId: initial?.agent_id != null ? String(initial.agent_id) : agents[0]?.id != null ? String(agents[0].id) : "",
     status: initial?.status ?? "draft",
-    triggerType: initial?.trigger_type ?? "date_offset",
     referenceField: initial?.trigger_config?.reference_field ?? "appointment_date",
-    offsetDays: initial?.trigger_config?.offset_days != null ? String(initial.trigger_config.offset_days) : "-1",
+    offsetDays: String(initial?.trigger_config?.offset_days ?? -1),
     time: initial?.trigger_config?.time ?? "10:00",
     timezone: initial?.trigger_config?.timezone ?? "Europe/Moscow",
-    profileId: initial?.action_config?.profile_id ?? profiles[0]?.id ?? "bank",
     reason: initial?.action_config?.reason ?? "",
-    channel: initial?.action_config?.channel ?? "phone",
+    channel: initial?.action_config?.channel ?? "web",
+    roomName: initial?.action_config?.room_name ?? "",
   }));
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
   const set = (key) => (event) => setForm({ ...form, [key]: event.target.value });
 
-  const submit = async (event) => {
+  const submit = (event) => {
     event.preventDefault();
-    setSaving(true);
     setError(null);
 
-    if (!form.agentId) {
-      setError("Нужен агент. Сначала создайте его в настройке агента.");
-      setSaving(false);
+    if (!form.name.trim()) {
+      setError("Укажите название сценария.");
       return;
     }
 
     const payload = {
       name: form.name.trim(),
-      agent_id: Number(form.agentId),
       status: form.status,
-      trigger_type: form.triggerType,
-      trigger_config:
-        form.triggerType === "date_offset"
-          ? {
-              reference_field: form.referenceField.trim(),
-              offset_days: Number(form.offsetDays),
-              time: form.time.trim(),
-              timezone: form.timezone.trim(),
-            }
-          : {},
-      conditions: [],
+      trigger_type: "date_offset",
+      trigger_config: {
+        reference_field: form.referenceField,
+        offset_days: Number(form.offsetDays),
+        time: form.time.trim(),
+        timezone: form.timezone.trim(),
+      },
       action_config: {
-        profile_id: form.profileId,
         reason: form.reason.trim(),
         channel: form.channel,
+        room_name: form.roomName.trim(),
       },
-      retry_policy: {},
     };
 
     try {
-      const saved = initial ? await updateWorkflow(initial.id, payload) : await createWorkflow(payload);
-      onSaved(saved);
+      onSaved(initial ? updateWorkflow(initial.id, payload) : createWorkflow(payload));
     } catch (failure) {
-      // The form (and whatever the operator typed) stays exactly as it was.
-      setError(failure.message);
-    } finally {
-      setSaving(false);
+      // The form (and whatever was typed) stays exactly as it was.
+      setError(failure.message ?? "Не удалось сохранить сценарий.");
     }
   };
 
   return (
-    <form className="history-form" onSubmit={submit}>
+    <form className="history-form" onSubmit={submit} noValidate>
       <label htmlFor="wf-name">Название</label>
       <input id="wf-name" value={form.name} onChange={set("name")} maxLength={120} required />
-
-      <label htmlFor="wf-agent">Агент</label>
-      <select id="wf-agent" value={form.agentId} onChange={set("agentId")} required>
-        <option value="" disabled>
-          {agents.length === 0 ? "Агентов пока нет — создайте агента" : "Выберите агента"}
-        </option>
-        {agents.map((agent) => (
-          <option key={agent.id} value={String(agent.id)}>
-            {agent.name}
-          </option>
-        ))}
-      </select>
 
       <label htmlFor="wf-status">Статус</label>
       <select id="wf-status" value={form.status} onChange={set("status")}>
@@ -127,7 +85,7 @@ function WorkflowForm({ agents, initial, profiles, onSaved, onCancel }) {
       </select>
 
       <label htmlFor="wf-trigger-type">Событие запуска</label>
-      <select id="wf-trigger-type" value={form.triggerType} onChange={set("triggerType")}>
+      <select id="wf-trigger-type" value="date_offset" disabled>
         {TRIGGER_TYPES.map((type) => (
           <option key={type.id} value={type.id}>
             {type.label}
@@ -135,39 +93,30 @@ function WorkflowForm({ agents, initial, profiles, onSaved, onCancel }) {
         ))}
       </select>
 
-      {form.triggerType === "date_offset" && (
-        <div className="history-form-buttons">
-          <input
-            aria-label="Поле даты в карточке контакта"
-            placeholder="Поле метаданных, напр. appointment_date"
-            value={form.referenceField}
-            onChange={set("referenceField")}
-          />
-          <input
-            aria-label="Смещение в днях"
-            type="number"
-            placeholder="-1"
-            value={form.offsetDays}
-            onChange={set("offsetDays")}
-          />
-          <input aria-label="Время суток" placeholder="10:00" value={form.time} onChange={set("time")} />
-          <input
-            aria-label="Часовой пояс"
-            placeholder="Europe/Moscow"
-            value={form.timezone}
-            onChange={set("timezone")}
-          />
-        </div>
-      )}
-
-      <label htmlFor="wf-profile">Профиль, который использует звонок</label>
-      <select id="wf-profile" value={form.profileId} onChange={set("profileId")}>
-        {PROFILES_FOR_FORM.map((profile) => (
-          <option key={profile.id} value={profile.id}>
-            {profile.name}
-          </option>
-        ))}
-      </select>
+      <div className="history-form-buttons">
+        <label className="field-inline" htmlFor="wf-field">
+          Поле с датой
+          <select id="wf-field" value={form.referenceField} onChange={set("referenceField")}>
+            {REFERENCE_FIELDS.map((field) => (
+              <option key={field.id} value={field.id}>
+                {field.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field-inline" htmlFor="wf-offset">
+          Смещение, дней
+          <input id="wf-offset" type="number" value={form.offsetDays} onChange={set("offsetDays")} />
+        </label>
+        <label className="field-inline" htmlFor="wf-time">
+          Время
+          <input id="wf-time" value={form.time} onChange={set("time")} placeholder="10:00" />
+        </label>
+        <label className="field-inline" htmlFor="wf-zone">
+          Часовой пояс
+          <input id="wf-zone" value={form.timezone} onChange={set("timezone")} placeholder="Europe/Moscow" />
+        </label>
+      </div>
 
       <label htmlFor="wf-reason">Зачем совершается звонок (проговаривается клиенту)</label>
       <input
@@ -181,9 +130,18 @@ function WorkflowForm({ agents, initial, profiles, onSaved, onCancel }) {
 
       <label htmlFor="wf-channel">Как выполняется звонок</label>
       <select id="wf-channel" value={form.channel} onChange={set("channel")}>
-        <option value="phone">Телефонный звонок (звонит на их номер)</option>
         <option value="web">Ссылка в браузере (человек открывает её и отвечает)</option>
+        <option value="phone">Телефонный звонок (требует телефонии на вашей стороне)</option>
       </select>
+
+      <label htmlFor="wf-room">Имя комнаты (необязательно)</label>
+      <input
+        id="wf-room"
+        value={form.roomName}
+        onChange={set("roomName")}
+        maxLength={120}
+        placeholder="Если пусто, комнату выберет сервис токенов"
+      />
 
       {error && (
         <p className="voice-notice" role="alert">
@@ -192,232 +150,159 @@ function WorkflowForm({ agents, initial, profiles, onSaved, onCancel }) {
       )}
 
       <div className="history-form-buttons">
-        <button type="button" onClick={onCancel} disabled={saving}>
+        <button type="button" onClick={onCancel}>
           Отмена
         </button>
-        <button type="submit" className="primary" disabled={saving}>
-          {saving ? "Сохраняем…" : initial ? "Сохранить изменения" : "Добавить сценарий"}
+        <button type="submit" className="primary">
+          {initial ? "Сохранить изменения" : "Добавить сценарий"}
         </button>
       </div>
     </form>
   );
 }
 
-// Step 18E: what this workflow would do for one contact right now (eligibility) and the one-
-// click run that reuses WorkflowEngine.run_for_contact - the exact judgment the scheduler makes.
-function EligibilityPanel({ contacts, workflows }) {
-  // What the operator picked, if anything. The lists load after this panel first mounts, so the
-  // effective selection falls back to the first entry each time instead of being frozen at ""
-  // from the empty first render (which left both buttons permanently disabled).
+// What this workflow would do for one contact right now, and the one-click run. Both are
+// decided here, in the browser, by the same evaluation - there is no scheduler behind it,
+// and the panel does not pretend there is.
+function EligibilityPanel({ contacts, workflows, onRun }) {
   const [picked, setPicked] = useState({ workflow: "", contact: "" });
   const stillThere = (list, id) => list.some((item) => String(item.id) === id);
   const workflowId = stillThere(workflows, picked.workflow) ? picked.workflow : workflows[0] ? String(workflows[0].id) : "";
   const contactId = stillThere(contacts, picked.contact) ? picked.contact : contacts[0] ? String(contacts[0].id) : "";
-  const setWorkflowId = (value) => setPicked((current) => ({ ...current, workflow: value }));
-  const setContactId = (value) => setPicked((current) => ({ ...current, contact: value }));
-  const [evaluation, setEvaluation] = useState(null);
   const [outcome, setOutcome] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
 
-  const ready = workflowId !== "" && contactId !== "";
-
-  const run = async (kind) => {
-    setBusy(true);
-    setError(null);
-    setEvaluation(null);
-    setOutcome(null);
-
-    try {
-      if (kind === "eligibility") {
-        setEvaluation(await checkWorkflowEligibility(Number(workflowId), Number(contactId)));
-      } else {
-        setOutcome(await triggerWorkflow(Number(workflowId), Number(contactId)));
-      }
-    } catch (failure) {
-      setError(failure.message);
-    } finally {
-      setBusy(false);
-    }
-  };
+  const workflow = workflows.find((row) => String(row.id) === workflowId) ?? null;
+  const contact = contacts.find((row) => String(row.id) === contactId) ?? null;
+  const check = workflow && contact ? evaluateWorkflow(workflow, contact) : null;
+  const ready = Boolean(workflow && contact);
 
   if (workflows.length === 0 || contacts.length === 0) {
     return (
       <div className="state-block">
         {workflows.length === 0
-          ? "Добавьте сценарий, чтобы проверить допуск и запустить его вручную."
-          : "Добавьте контакт, чтобы проверить допуск и запустить на нём сценарий."}
+          ? "Добавьте сценарий, чтобы проверить его на контакте."
+          : "Добавьте контакт, чтобы проверить сценарий на нём."}
       </div>
     );
   }
 
+  const run = () => {
+    const result = runWorkflow(workflow, contact);
+
+    setOutcome(result);
+    onRun?.();
+  };
+
   return (
     <div className="history-form">
       <label htmlFor="ep-workflow">Сценарий</label>
-      <select id="ep-workflow" value={workflowId} onChange={(event) => setWorkflowId(event.target.value)}>
-        {workflows.map((workflow) => (
-          <option key={workflow.id} value={String(workflow.id)}>
-            {workflow.name}
+      <select id="ep-workflow" value={workflowId} onChange={(event) => setPicked((c) => ({ ...c, workflow: event.target.value }))}>
+        {workflows.map((row) => (
+          <option key={row.id} value={String(row.id)}>
+            {row.name}
           </option>
         ))}
       </select>
 
       <label htmlFor="ep-contact">Контакт</label>
-      <select id="ep-contact" value={contactId} onChange={(event) => setContactId(event.target.value)}>
-        {contacts.map((contact) => (
-          <option key={contact.id} value={String(contact.id)}>
-            {contact.name}
+      <select id="ep-contact" value={contactId} onChange={(event) => setPicked((c) => ({ ...c, contact: event.target.value }))}>
+        {contacts.map((row) => (
+          <option key={row.id} value={String(row.id)}>
+            {row.name}
           </option>
         ))}
       </select>
 
-      <div className="history-form-buttons">
-        <button type="button" onClick={() => run("eligibility")} disabled={busy || !ready}>
-          {busy ? (
-            <>
-              <span className="button-spinner" aria-hidden="true" />
-              Выполняем…
-            </>
-          ) : (
-            "Проверить допуск"
-          )}
-        </button>
-        <button type="button" className="primary" onClick={() => run("trigger")} disabled={busy || !ready}>
-          {busy ? (
-            <>
-              <span className="button-spinner" aria-hidden="true" />
-              Working…
-            </>
-          ) : (
-            "Запустить"
-          )}
-        </button>
-      </div>
-
-      {error && (
-        <p className="voice-notice" role="alert">
-          {error}
-        </p>
-      )}
-
-      {evaluation && (
-        <div className={`eligibility-result ${evaluation.eligible ? "" : "is-blocked"}`} role="status">
-          <div className="er-head">{evaluation.eligible ? "Допуск есть" : "Допуска нет"}</div>
+      {check && (
+        <div className={`eligibility-result ${check.eligible ? "" : "is-blocked"}`} role="status">
+          <div className="er-head">{check.eligible ? "Допуск есть" : "Допуска нет"}</div>
           <p className="er-copy">
-            {evaluation.reason}
-            {evaluation.detail ? ` — ${evaluation.detail}` : ""}.
+            {check.reason}
+            {check.detail ? ` — ${check.detail}` : ""}.
           </p>
         </div>
       )}
 
       {outcome && (
-        <div className={`eligibility-result ${outcome.call_job_created ? "" : "is-blocked"}`} role="status">
-          <div className="er-head">{outcome.call_job_created ? "Звонок зафиксирован" : "Звонок не создан"}</div>
+        <div className={`eligibility-result ${outcome.call_created ? "" : "is-blocked"}`} role="status">
+          <div className="er-head">{outcome.call_created ? "Задача создана" : "Задача не создана"}</div>
           <p className="er-copy">
-            {outcome.call_job_created
-              ? `Задача ${outcome.job_id} создана (зафиксирована, но ещё не набрана).`
+            {outcome.call_created
+              ? `Звонок ${outcome.job_id} поставлен в очередь. Никто ещё не позвонил — начните разговор на главной.`
               : `${outcome.reason}${outcome.detail ? ` — ${outcome.detail}` : ""}.`}
           </p>
         </div>
       )}
+
+      <div className="history-form-buttons">
+        <button type="button" className="primary" onClick={run} disabled={!ready || !check?.eligible}>
+          Поставить звонок в очередь
+        </button>
+      </div>
     </div>
   );
 }
 
-export default function Workflows({ serverAvailable }) {
-  const [workflows, setWorkflows] = useState([]);
-  const [agents, setAgents] = useState([]);
+export default function Workflows() {
+  const [rows, setRows] = useState([]);
   const [contacts, setContacts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
-  const [editingId, setEditingId] = useState(null); // null while adding a new workflow
+  const [editingId, setEditingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(() => {
     setError(null);
 
     try {
-      const [workflowList, agentList, contactList] = await Promise.all([
-        fetchWorkflows(),
-        fetchAgents(),
-        fetchContacts().catch(() => []), // no organization: the panel just shows its own hint
-      ]);
-      setWorkflows(workflowList);
-      setAgents(agentList);
-      setContacts(contactList);
+      setRows(readWorkflows());
+      setContacts(readContacts());
     } catch (failure) {
-      setError(failure.message);
-    } finally {
-      setLoading(false);
+      setError(failure.message ?? "Не удалось прочитать сценарии.");
     }
   }, []);
 
   useEffect(() => {
-    // Nothing to load: the render below shows the offline message instead of ever consulting
-    // `loading`, regardless of its value.
-    if (!serverAvailable) return undefined;
-
-    // Deferred, same as CallHistory's own load effect: load() sets state synchronously at its
-    // own start, which must not happen directly inside the effect body.
     const timer = setTimeout(load, 0);
 
     return () => clearTimeout(timer);
-  }, [serverAvailable, load]);
+  }, [load]);
 
   const openCreate = () => {
     setEditingId(null);
     setFormOpen(true);
   };
 
-  const openEdit = (workflow) => {
-    setEditingId(workflow.id);
-    setFormOpen(true);
-  };
-
   const saved = (workflow) => {
-    setWorkflows((list) =>
-      list.some((w) => w.id === workflow.id) ? list.map((w) => (w.id === workflow.id ? workflow : w)) : [...list, workflow]
-    );
+    if (!workflow) return;
+
+    setRows((list) => (list.some((row) => row.id === workflow.id) ? list.map((row) => (row.id === workflow.id ? workflow : row)) : [...list, workflow]));
     setFormOpen(false);
   };
 
-  const remove = async (workflowId) => {
+  const remove = (workflowId) => {
     if (!window.confirm("Удалить этот сценарий? Это действие необратимо.")) return;
 
     setDeletingId(workflowId);
-    setError(null);
 
     try {
-      await deleteWorkflow(workflowId);
-      setWorkflows((list) => list.filter((w) => w.id !== workflowId));
+      deleteWorkflow(workflowId);
+      setRows((list) => list.filter((row) => row.id !== workflowId));
     } catch (failure) {
-      // A workflow with call jobs cannot be deleted (409); the list is left exactly as it was.
-      setError(failure.message);
+      setError(failure.message ?? "Не удалось удалить сценарий.");
     } finally {
       setDeletingId(null);
     }
   };
 
-  if (!serverAvailable) {
-    return (
-      <section className="history-page">
-        <h2>Сценарии</h2>
-        <p className="callee-note">
-          Сценарии хранятся на сервере. Запустите бэкенд (и войдите), чтобы ими управлять.
-        </p>
-      </section>
-    );
-  }
-
-  const editingWorkflow = editingId ? workflows.find((w) => w.id === editingId) ?? null : null;
+  const editingWorkflow = editingId ? rows.find((row) => row.id === editingId) ?? null : null;
 
   return (
     <section className="history-page">
       <div className="history-head">
         <div>
           <h2>Сценарии</h2>
-          <p className="page-sub">Автоматизируйте, когда и как действует ваш ИИ-агент.</p>
+          <p className="page-sub">Когда пора звонить клиенту и зачем.</p>
         </div>
         <div className="history-form-buttons">
           <button onClick={load}>Обновить</button>
@@ -427,14 +312,20 @@ export default function Workflows({ serverAvailable }) {
         </div>
       </div>
 
+      <p className="callee-note">
+        Сценарии хранятся и вычисляются в этом браузере. Ничего не выполняется по расписанию: проверка
+        запускается здесь и сейчас, а «в очередь» лишь записывает задачу в историю — начать разговор нужно
+        вручную на главной.
+      </p>
+
       <div className="workflow-path" aria-label="Как выполняется сценарий">
         <span>Событие</span>
         <i />
-        <span>Агент</span>
+        <span>Проверка</span>
+        <i />
+        <span>Задача</span>
         <i />
         <span>Разговор</span>
-        <i />
-        <span>Действие</span>
       </div>
 
       {error && (
@@ -443,36 +334,22 @@ export default function Workflows({ serverAvailable }) {
         </p>
       )}
 
-      {formOpen && (
-        <WorkflowForm
-          key={editingId ?? "new"}
-          agents={agents}
-          profiles={PROFILES_FOR_FORM}
-          initial={editingWorkflow}
-          onSaved={saved}
-          onCancel={() => setFormOpen(false)}
-        />
-      )}
+      {formOpen && <WorkflowForm key={editingId ?? "new"} initial={editingWorkflow} onSaved={saved} onCancel={() => setFormOpen(false)} />}
 
       <h3>Настроенные сценарии</h3>
-      {loading ? (
-        <div className="state-block is-loading">Загружаем сценарии...</div>
-      ) : workflows.length === 0 ? (
+      {rows.length === 0 ? (
         <div className="state-block">Сценариев пока нет.</div>
       ) : (
         <ScrollReveal>
           <ul className="workflow-list" aria-label="Настроенные сценарии">
-            {workflows.map((workflow) => {
-              const agent = agents.find((a) => a.id === workflow.agent_id);
-              const trigger =
-                workflow.trigger_type === "date_offset"
-                  ? `через ${workflow.trigger_config?.offset_days ?? "?"} дн. от ${workflow.trigger_config?.reference_field ?? "?"} в ${workflow.trigger_config?.time ?? "?"}`
-                  : workflow.trigger_type;
+            {rows.map((workflow) => {
+              const field = REFERENCE_FIELDS.find((item) => item.id === workflow.trigger_config.reference_field);
+
               const nodes = [
-                ["Событие", trigger],
-                ["ИИ-агент", agent ? agent.name : `агент #${workflow.agent_id}`],
-                ["Разговор", `${workflow.action_config?.profile_id ?? "?"} · ${workflow.action_config?.channel ?? "?"}`],
-                ["Действие", workflow.action_config?.reason ?? "—"],
+                ["Событие", `за ${workflow.trigger_config.offset_days} дн. до «${field?.label ?? workflow.trigger_config.reference_field}», в ${workflow.trigger_config.time}`],
+                ["Канал", workflow.action_config.channel === "phone" ? "телефон" : "ссылка в браузере"],
+                ["Комната", workflow.action_config.room_name || "выберет сервис токенов"],
+                ["Цель", workflow.action_config.reason || "—"],
               ];
 
               return (
@@ -481,14 +358,10 @@ export default function Workflows({ serverAvailable }) {
                     <h4>{workflow.name}</h4>
                     <StatusBadge tone={STATUS_TONE[workflow.status] ?? "info"}>{STATUS_LABEL[workflow.status] ?? workflow.status}</StatusBadge>
                     <span className="wf-actions">
-                      <button className="history-open" onClick={() => openEdit(workflow)}>
+                      <button className="history-open" onClick={() => (setEditingId(workflow.id), setFormOpen(true))}>
                         Изменить
                       </button>
-                      <button
-                        className="history-open"
-                        onClick={() => remove(workflow.id)}
-                        disabled={deletingId === workflow.id}
-                      >
+                      <button className="history-open" onClick={() => remove(workflow.id)} disabled={deletingId === workflow.id}>
                         {deletingId === workflow.id ? "Удаляем…" : "Удалить"}
                       </button>
                     </span>
@@ -508,8 +381,8 @@ export default function Workflows({ serverAvailable }) {
         </ScrollReveal>
       )}
 
-      <h3>Запуск сценария на контакте</h3>
-      <EligibilityPanel contacts={contacts} workflows={workflows} />
+      <h3>Проверить сценарий на контакте</h3>
+      <EligibilityPanel contacts={contacts} workflows={rows} />
     </section>
   );
 }

@@ -1,18 +1,21 @@
-// Turns what the console knows (the agent configuration, the call state and the
-// finished call's result) into the "call record" the Home page shows: a
-// summary in the centre and phone-call style details on the right. Nothing here
-// is specific to a domain: every label comes from the configuration or the call.
+// Turns what the console knows (the agent description, the call state and the finished
+// call's result) into the "call record" the Home page shows: a summary in the centre and
+// phone-call style details on the right. Nothing here is domain-specific: every label
+// comes from the agent description or the call itself.
 
-import { displayName } from "./format.js";
 import { label, toneOf } from "./results.js";
 
-// A configured role reads as a job title ("Ассистент поддержки"), and a call is
-// not that job - it is a conversation with the client. The title is dropped and
-// what is left is what the conversation is about.
-const JOB_TITLE = /\s+(ассистент|агент|оператор|специалист|консультант|менеджер|помощник|бот)$/i;
+// What the card is titled. A role reads as a job title, and a call is not that job - it
+// is a conversation with the client - so the title labels the role rather than repeating
+// it back as a sentence.
+//
+// The role is used exactly as the operator wrote it. An earlier version stripped a leading
+// "Ассистент", the way the English version stripped a trailing "Assistant", and was left
+// with "поддержки пациентов" - the genitive of "поддержка пациентов", and not a title.
+// Russian job titles are noun phrases in the genitive, so they cannot be truncated and
+// re-cased by string surgery; they are shown whole or not at all.
 const COVERED = "Обсуждено: ";
 const NO_QUESTIONS = "Вопросов не поступило";
-const EXECUTED = "Выполнено после подтверждения";
 
 const LIVE_STATES = ["connecting", "listening", "processing", "speaking"];
 
@@ -26,23 +29,23 @@ const plural = (count, one, few, many) => {
   return `${count} ${many}`;
 };
 
-// "Ассистент поддержки клиентов" -> "Поддержка клиентов". Falls back to the
-// industry, then the built-in profile, so an unconfigured agent still has a name.
+// "Ассистент поддержки пациентов" -> "Поддержка пациентов". With nothing described at
+// all, a call is still a call, and it is called that.
 export function conversationTitle({ role, industry, fallback } = {}) {
-  const base = (role || industry || fallback || "").replace(JOB_TITLE, "").trim();
+  const value = (role || industry || fallback || "").trim();
 
-  return base ? `Разговор: ${base}` : "Голосовой разговор";
+  return value ? `Разговор — ${value}` : "Голосовой разговор";
 }
 
-// Who the agent is, from the saved configuration when there is one and from the
-// built-in profile otherwise (calls still work before anything is configured).
-export function describeAgent(config, profile) {
+// Who the agent is. Before the agent is described there is no name to show, so the
+// generic one is used - which is honest, and is what the UI says it is.
+export function describeAgent(config) {
   return {
     configured: Boolean(config),
-    agentName: config?.agentName || profile.name,
-    role: config?.role || profile.name,
+    agentName: config?.agentName || "Голосовой агент",
+    role: config?.role || "",
     industry: config?.industry || "",
-    purpose: config?.purpose || profile.description || "",
+    purpose: config?.purpose || "",
   };
 }
 
@@ -69,8 +72,7 @@ function topicsOf(summary) {
     .map((point) => point.slice(COVERED.length));
 }
 
-// Key points that are neither a topic nor the "nothing asked" filler, such as
-// how many attempts the guardrails blocked.
+// Key points that are neither a topic nor the "nothing asked" filler.
 function flagsOf(summary) {
   return (summary?.keyPoints ?? []).filter((point) => !point.startsWith(COVERED) && point !== NO_QUESTIONS);
 }
@@ -78,7 +80,7 @@ function flagsOf(summary) {
 function buildNotes({ summary, topics, contact, agentName }) {
   if (!summary) return "";
 
-  const executed = summary.actionsTaken.filter((action) => action.startsWith(EXECUTED)).length;
+  const executed = summary.actionsTaken.filter((action) => action.startsWith("Выполнено")).length;
   const notes = [];
 
   if (topics.length) {
@@ -113,25 +115,23 @@ function outcomeOf(summary, agentName) {
 
 export function buildCallRecord({
   config,
-  profile,
-  user,
   callState,
   summary = null,
   summaryPending = false,
   duration = 0,
   startedAt = null,
   callError = null,
+  contact = "Оператор",
 }) {
-  const agent = describeAgent(config, profile);
+  const agent = describeAgent(config);
   const status = callStatus(callState, summary, summaryPending);
-  const contact = displayName(user);
   const topics = topicsOf(summary);
 
   return {
     status,
     agent,
     contact,
-    title: conversationTitle({ role: agent.role, industry: agent.industry, fallback: profile.name }),
+    title: conversationTitle({ role: agent.role, industry: agent.industry, fallback: agent.agentName }),
     callId: summary?.callId ?? null,
     startedAt: summary?.startedAt ?? startedAt,
     durationSeconds: summary ? summary.durationSeconds : status === "idle" ? null : duration,

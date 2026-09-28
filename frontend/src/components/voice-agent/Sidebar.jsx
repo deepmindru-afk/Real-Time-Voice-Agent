@@ -1,13 +1,11 @@
 import Icon from "./Icon";
 import AgentUseCaseConfig from "./AgentUseCaseConfig";
 import { isLiveKitSupported, liveKitSupport } from "../../runtime/livekit/support.js";
-import { voiceSupport } from "../../runtime/useVoice.js";
 
 // Independent destinations. None of them contains another.
 // [icon, label, view it opens]
 const NAVIGATION = [
   ["home", "Главная", "home"],
-  ["applications", "Заявки", "applications"],
   ["workflow", "Сценарии", "workflows"],
   ["phone", "История звонков", "history"],
   ["user", "Контакты", "contacts"],
@@ -20,16 +18,6 @@ const MIC_STATUS = {
   blocked: ["Заблокирован", false],
   error: ["Ошибка", false],
 };
-
-// Which engine is answering. LiveKit is the product; the other two are what is left
-// when it is not available, and the operator is told which one they are looking at.
-function brainStatus(brain) {
-  if (brain.source === "livekit") return ["Готов (LiveKit)", true];
-  if (brain.source === "server") return [`Готов (${brain.name})`, true];
-  if (brain.source === "local") return ["Готов (локальные правила, офлайн)", true];
-
-  return ["Проверяем...", null];
-}
 
 function StatusRow({ label, value, ok }) {
   return (
@@ -45,17 +33,11 @@ function StatusRow({ label, value, ok }) {
 export default function Sidebar({
   open,
   callState,
-  profiles,
-  profile,
-  profileLocked,
-  onProfileChange,
-  voice,
-  brain,
   view,
   onNavigate,
-  customers = [],
-  customerRef = "",
-  onCustomerChange,
+  engine,
+  mic = "off",
+  connection,
   configExpanded,
   onToggleConfig,
   configDraft,
@@ -65,14 +47,9 @@ export default function Sidebar({
   configSaved = false,
   onConfigure,
 }) {
-  // With LiveKit running, readiness is the room's, not the browser's: the browser only
-  // has to be able to capture a microphone and play audio, which the SDK reports.
-  const onLiveKit = brain.source === "livekit";
-  const ready = onLiveKit
-    ? isLiveKitSupported()
-    : voiceSupport.recognition && voiceSupport.synthesis;
-  const [micText, micOk] = MIC_STATUS[voice.micState] ?? MIC_STATUS.off;
-  const [brainText, brainOk] = brainStatus(brain);
+  const [micText, micOk] = MIC_STATUS[mic] ?? MIC_STATUS.off;
+  const ready = isLiveKitSupported() && engine.ok;
+  const endpoint = connection?.tokenEndpoint;
 
   return (
     <aside className={`sidebar ${open ? "is-open" : ""}`} id="app-sidebar" aria-label="Боковое меню">
@@ -100,78 +77,43 @@ export default function Sidebar({
             onDraftChange={onConfigDraftChange}
             configured={configured}
             dirty={configDirty}
-            locked={profileLocked}
             saved={configSaved}
             onConfigure={onConfigure}
-          >
-            <div className="config-data">
-              <label htmlFor="agent-profile">Подключённые данные и инструменты</label>
-              <select
-                id="agent-profile"
-                className="profile-select"
-                value={profile.id}
-                disabled={profileLocked}
-                onChange={(event) => onProfileChange(event.target.value)}
-              >
-                {profiles.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-
-              {customers.length > 0 && (
-                <>
-                  <label htmlFor="agent-customer">Клиент</label>
-                  <select
-                    id="agent-customer"
-                    className="profile-select"
-                    value={customerRef}
-                    disabled={profileLocked}
-                    onChange={(event) => onCustomerChange(event.target.value)}
-                  >
-                    <option value="">Демо-данные</option>
-                    {customers.map((customer) => (
-                      <option key={customer.ref} value={customer.ref}>
-                        {customer.display_name}
-                      </option>
-                    ))}
-                  </select>
-                </>
-              )}
-
-              <p className="profile-hint">
-                {profileLocked
-                  ? "Завершите звонок, чтобы сменить данные и инструменты."
-                  : "Запросы и действия, доступные агенту."}
-              </p>
-            </div>
-          </AgentUseCaseConfig>
+            connection={connection}
+          />
         </div>
       </div>
 
       <div className="service-card">
         <div className="service-title">
           <span className={`online-dot ${ready ? "" : "offline-dot"}`} />
-          {ready ? "Голосовая служба готова" : "Голос ограничен"}
+          {ready ? "Голосовая служба готова" : "Голос не настроен"}
         </div>
 
         <ul className="service-list">
-          <StatusRow label="Микрофон" value={micText} ok={micOk} />
           <StatusRow
-            label="Распознавание речи"
-            value={onLiveKit ? (liveKitSupport.secure ? "Готово" : "Требуется HTTPS") : voiceSupport.recognition ? "Готово" : "Недоступно"}
-            ok={onLiveKit ? liveKitSupport.secure : voiceSupport.recognition}
+            label="Микрофон"
+            value={micText}
+            ok={micOk}
           />
           <StatusRow
-            label="Озвучивание речи"
-            value={onLiveKit || voiceSupport.synthesis ? "Готово" : "Недоступно"}
-            ok={onLiveKit ? true : voiceSupport.synthesis}
+            label="WebRTC"
+            value={liveKitSupport.rtc && liveKitSupport.secure ? "Готово" : "Недоступно"}
+            ok={liveKitSupport.rtc && liveKitSupport.secure}
           />
-          <StatusRow label="ИИ-агент" value={brainText} ok={brainOk} />
+          <StatusRow
+            label="Адрес сервера"
+            value={connection?.url || (endpoint ? "от эндпоинта" : "не задан")}
+            ok={Boolean(connection?.url) || Boolean(endpoint)}
+          />
+          <StatusRow
+            label="ИИ-агент"
+            value={engine.state === "ready" ? "Готов (LiveKit)" : engine.state === "unsupported" ? "Браузер не поддерживает" : "Не настроен"}
+            ok={engine.state === "ready"}
+          />
         </ul>
 
-        {brain.note && <p className="brain-note">{brain.note}</p>}
+        {engine.note && <p className="brain-note">{engine.note}</p>}
 
         {callState === "processing" && <div className="service-processing">Обработка разговора...</div>}
       </div>

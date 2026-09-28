@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { addCall } from "../runtime/history.js";
 import AgentConfigPanel from "../components/voice-agent/AgentConfigPanel";
-import { emptyConfig, fromAgentPayload, loadConfig, resolveConfig, sameConfig, saveConfig, toAgentPayload } from "../runtime/agentConfig.js";
-import { createAgent, fetchAgents, updateAgent } from "../runtime/agents.js";
-import { buildCallRecord } from "../runtime/callRecord.js";
+import { loadLabel, normalizeLabel, saveLabel } from "../runtime/agentConfig.js";
 import { CALL_STATE_TEXT } from "../runtime/format.js";
+import { isConfigured as isConnectionConfigured, loadConnection, normalizeConnection, saveConnection } from "../runtime/livekit/connection.js";
 import TopNavbar from "../components/voice-agent/TopNavbar";
 import Sidebar from "../components/voice-agent/Sidebar";
 import VoicePanel from "../components/voice-agent/VoicePanel";
@@ -15,25 +15,19 @@ import { ProfilePage, SectionPlaceholder, SettingsPage } from "../components/voi
 import CallHistory from "../components/voice-agent/CallHistory";
 import Contacts from "../components/voice-agent/Contacts";
 import Workflows from "../components/voice-agent/Workflows";
-import { useAuth } from "../auth/context.js";
 import { useRouter } from "../router/context.js";
-import { fetchCustomers } from "../runtime/customers.js";
-import { DEFAULT_PROFILE_ID, PROFILES, getProfile } from "../profiles/index.js";
+import { buildCallRecord } from "../runtime/callRecord.js";
 import { useVoiceAgent } from "../runtime/useVoiceAgent.js";
 import "../styles/voice-agent.css";
 
-// The operator console the application has always had (voice call, call history, contacts,
-// workflows, agent configuration), mounted under /app/*. Its screens are unchanged; what is new is
-// that the URL now says which one is open, and that signing in and out belong to the auth provider
-// instead of a component of its own.
+// The operator console. One call at a time, a transcript of it, its result, and the
+// local records around it. Nothing here needs a server: the only thing it talks to is a
+// LiveKit agent, through a token the operator's own token service mints.
 //
 // route name -> which of the console's screens it shows
 const VIEW_FOR_ROUTE = {
   dashboard: "home",
   console: "home",
-  agents: "home",
-  "agent-new": "home",
-  "agent-edit": "home",
   calls: "history",
   "call-detail": "history",
   contacts: "contacts",
@@ -42,9 +36,8 @@ const VIEW_FOR_ROUTE = {
   settings: "settings",
 };
 
-// ...and the reverse: where each screen lives. "applications" and "profile" have no URL of their own
-// (Profile is a screen of the account menu, not a section of Settings), so they are remembered by
-// the console instead.
+// ...and the reverse: where each screen lives. "profile" has no URL of its own (it is a
+// screen of the account menu, not a section of Settings), so the console remembers it.
 const PATH_FOR_VIEW = {
   home: "/app/dashboard",
   history: "/app/calls",
@@ -60,87 +53,27 @@ const DEFAULT_THEME = "dark";
 const TAGLINE = "Один голосовой движок. Любая роль. Любая отрасль.";
 
 export default function OperatorConsole() {
-  const { user, signOut } = useAuth();
   const { route, path, navigate: goTo } = useRouter();
-  const onSignOut = user ? signOut : null;
-  const [theme, setTheme] = useState(
-    () => localStorage.getItem("voice-agent-theme") || DEFAULT_THEME
-  );
-  const [profileId, setProfileId] = useState(
-    () => localStorage.getItem("voice-agent-profile") || DEFAULT_PROFILE_ID
-  );
+  const [theme, setTheme] = useState(() => localStorage.getItem("voice-agent-theme") || DEFAULT_THEME);
 
-  const profile = getProfile(profileId);
-  const [customers, setCustomers] = useState([]);
-  const [customerRef, setCustomerRef] = useState("");
-  // What the operator wants the agent to do. Null until a valid one is saved. Starts from this
-  // browser's local cache (so the first paint has something to show); the backend's own Agent,
-  // once the load below resolves, always wins over it - see saveAgentConfig and the load effect.
-  const [agentConfig, setAgentConfig] = useState(() => loadConfig());
-  // What the sidebar fields hold while being edited; saving makes it the agent.
-  const [configDraft, setConfigDraft] = useState(() => loadConfig() ?? emptyConfig());
-  // The backend Agent's id, once a load or a save has told us it. Null means "not created yet":
-  // the next save creates one instead of updating.
-  const [agentRecordId, setAgentRecordId] = useState(null);
+  // How to reach a LiveKit agent. Persisted, because it does not change between calls.
+  const [connection, setConnection] = useState(() => normalizeConnection(loadConnection()));
+  // How the agent is called in this console. A local label; see agentConfig.js for why it
+  // is not sent anywhere.
+  const [agentLabel, setAgentLabel] = useState(() => loadLabel());
   const [configOpen, setConfigOpen] = useState(false);
   const [configSaved, setConfigSaved] = useState(false);
-  const [configSaving, setConfigSaving] = useState(false);
-  const [configSaveError, setConfigSaveError] = useState(null);
-  const [configExpanded, setConfigExpanded] = useState(() => !loadConfig());
+  const [configExpanded, setConfigExpanded] = useState(() => !isConnectionConfigured(loadConnection()));
+
   const [navOpen, setNavOpen] = useState(false); // the sidebar drawer on small screens
-  const agentContext = useMemo(() => resolveConfig(agentConfig), [agentConfig]);
-  const agent = useVoiceAgent(profile, { customerRef, agentConfig: agentContext });
-  // home | applications | workflows | history | analytics | profile | settings
-  // The URL decides, except for a screen with no URL of its own, which is remembered with the
-  // path it was opened on (so going Back to another URL shows that URL's screen again).
+
+  const agent = useVoiceAgent({ connection, participantName: connection.participantName || undefined });
+
   const [own, setOwn] = useState(null);
   const view = own && own.path === path ? own.view : (VIEW_FOR_ROUTE[route] ?? "home");
-  // Which part of a finished call the centre shows. Tied to the call, so a new
-  // call starts on its summary again.
+  // Which part of a finished call the centre shows. Tied to the call, so a new call
+  // starts on its summary again.
   const [recordView, setRecordView] = useState({ callId: null, view: "summary" });
-
-  // LiveKit and the server brain both mean "there is a backend behind this". Only the
-  // local rules engine means there is not.
-  const serverBrain = agent.brain.available;
-
-  useEffect(() => {
-    let cancelled = false;
-
-    (serverBrain ? fetchCustomers(profile.id) : Promise.resolve([])).then((list) => {
-      if (!cancelled) setCustomers(list);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [profile.id, serverBrain]);
-
-  // The backend is now the source of truth for the agent configuration (Step 18B): once a server
-  // is known to be there, load its organization's agent and let it override the local guess this
-  // component started with. No server (serverBrain false) leaves the local draft exactly as it
-  // was before this step - fetchAgents() itself never throws, so a real network problem behaves
-  // the same as "no server" here; a save attempt is where that would actually be reported.
-  useEffect(() => {
-    if (!serverBrain) return undefined;
-
-    let cancelled = false;
-
-    fetchAgents().then(([found]) => {
-      if (cancelled || !found) return;
-
-      const config = fromAgentPayload(found);
-
-      setAgentRecordId(found.id);
-      setAgentConfig(config);
-      setConfigDraft(config);
-      setConfigExpanded(false);
-      saveConfig(config); // the local cache now follows the backend, never the other way round
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [serverBrain]);
 
   const isActive = agent.callState !== "idle" && agent.callState !== "ended";
 
@@ -148,10 +81,6 @@ export default function OperatorConsole() {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("voice-agent-theme", theme);
   }, [theme]);
-
-  useEffect(() => {
-    localStorage.setItem("voice-agent-profile", profile.id);
-  }, [profile.id]);
 
   useEffect(() => {
     if (!configSaved) return undefined;
@@ -173,45 +102,29 @@ export default function OperatorConsole() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [navOpen]);
 
-  const saveAgentConfig = async (config) => {
-    if (!serverBrain) {
-      // No server to persist to: the same local-only behavior this had before Step 18B.
-      saveConfig(config); // best effort: it still applies to this session if storage is blocked
-      setAgentConfig(config);
-      setConfigDraft(config);
+  const saveAgentLabel = useCallback((next) => {
+    // Local only, so this always succeeds. The panel says so, and says where it lives.
+    saveLabel(next);
+    setAgentLabel(normalizeLabel(next));
+    setConfigSaved(true);
+  }, []);
+
+  const saveLiveKitConnection = useCallback(
+    (next) => {
+      saveConnection(next);
+      setConnection(normalizeConnection(next));
       setConfigOpen(false);
       setConfigSaved(true);
-      return;
-    }
+    },
+    []
+  );
 
-    setConfigSaving(true);
-    setConfigSaveError(null);
-
-    try {
-      const payload = toAgentPayload(config);
-      const saved = await (agentRecordId ? updateAgent(agentRecordId, payload) : createAgent(payload));
-      const resolved = fromAgentPayload(saved);
-
-      setAgentRecordId(saved.id);
-      setAgentConfig(resolved);
-      setConfigDraft(resolved);
-      saveConfig(resolved); // the local cache follows what the server actually stored
-      setConfigOpen(false);
-      setConfigSaved(true);
-    } catch (error) {
-      // Nothing here pretends the save worked: the dialog stays open, with what the operator
-      // typed still in it, and says why.
-      setConfigSaveError(error.message || "Не удалось сохранить настройку агента.");
-    } finally {
-      setConfigSaving(false);
-    }
-  };
-
-  const openConfig = () => {
+  const openConfig = useCallback(() => {
     setNavOpen(false);
-    setConfigSaveError(null);
     setConfigOpen(true);
-  };
+  }, []);
+
+  const isConfiguredAgent = Boolean(agentLabel.agentName);
 
   const navigate = (target) => {
     setNavOpen(false);
@@ -224,11 +137,21 @@ export default function OperatorConsole() {
     }
   };
 
+  // A finished call belongs in this browser's history, and it is the only record of it
+  // that will ever exist. This runs once per call, on the transition into "ended".
+  useEffect(() => {
+    if (agent.callState !== "ended" || !agent.summary) return;
+
+    addCall({
+      status: "completed",
+      channel: "web",
+      agent: agentLabel.agentName || null,
+      ...agent.summary,
+    });
+  }, [agent.callState, agent.summary, agentLabel.agentName]);
+
   const record = buildCallRecord({
-    // A call keeps the agent it started with, even if the configuration is edited after.
-    config: agent.callState === "idle" ? agentContext : agent.callConfig,
-    profile,
-    user,
+    config: agentLabel,
     callState: agent.callState,
     summary: agent.summary,
     summaryPending: agent.summaryPending,
@@ -236,6 +159,7 @@ export default function OperatorConsole() {
     startedAt: agent.startedAt,
     callError: agent.callError,
   });
+
   const summaryView = recordView.callId === record.callId ? recordView.view : "summary";
 
   const showTranscript = () => {
@@ -243,17 +167,7 @@ export default function OperatorConsole() {
     document.getElementById("call-summary")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const toggleTheme = () => {
-    setTheme((currentTheme) => (currentTheme === "light" ? "dark" : "light"));
-  };
-
-  // A profile is loaded per call, so switching starts from a clean slate.
-  const changeProfile = (id) => {
-    agent.reset();
-    setCustomerRef("");
-    setCustomers([]); // the old profile's customers must not linger while the new list loads
-    setProfileId(id);
-  };
+  const toggleTheme = () => setTheme((current) => (current === "light" ? "dark" : "light"));
 
   return (
     <div className="voice-app">
@@ -261,8 +175,6 @@ export default function OperatorConsole() {
         theme={theme}
         onToggleTheme={toggleTheme}
         workspaceLabel={TAGLINE}
-        user={user}
-        onSignOut={onSignOut}
         onNavigate={navigate}
         sidebarOpen={navOpen}
         onToggleSidebar={() => setNavOpen(!navOpen)}
@@ -272,23 +184,16 @@ export default function OperatorConsole() {
         <Sidebar
           open={navOpen}
           callState={agent.callState}
-          profiles={PROFILES}
-          profile={profile}
-          profileLocked={isActive}
-          onProfileChange={changeProfile}
           view={view}
           onNavigate={navigate}
-          customers={customers}
-          customerRef={customerRef}
-          onCustomerChange={setCustomerRef}
-          voice={agent.voice}
-          brain={agent.brain}
+          engine={agent.engine}
+          mic={agent.voice.micState}
+          connection={connection}
           configExpanded={configExpanded}
           onToggleConfig={() => setConfigExpanded(!configExpanded)}
-          configDraft={configDraft}
-          onConfigDraftChange={(patch) => setConfigDraft({ ...configDraft, ...patch })}
-          configured={Boolean(agentConfig)}
-          configDirty={!sameConfig(configDraft, agentConfig ?? emptyConfig())}
+          label={agentLabel}
+          onDraftChange={setAgentLabel}
+          configured={isConfiguredAgent}
           configSaved={configSaved}
           onConfigure={openConfig}
         />
@@ -304,47 +209,29 @@ export default function OperatorConsole() {
 
         {configOpen && (
           <AgentConfigPanel
-            initial={configDraft}
-            onSave={saveAgentConfig}
-            onCancel={() => {
-              setConfigOpen(false);
-              setConfigSaveError(null);
-            }}
-            saving={configSaving}
-            saveError={configSaveError}
-            offline={!serverBrain}
+            label={agentLabel}
+            onSaveLabel={saveAgentLabel}
+            connection={connection}
+            onSaveConnection={saveLiveKitConnection}
+            onCancel={() => setConfigOpen(false)}
           />
         )}
 
         {view === "history" && (
           <main key={view} className="view-frame history-main">
-            <CallHistory
-              serverAvailable={agent.brain.available}
-              telephony={Boolean(agent.brain.telephony)}
-              profiles={PROFILES}
-            />
+            <CallHistory onOpenCall={() => navigate("home")} />
           </main>
         )}
 
         {view === "contacts" && (
           <main key={view} className="view-frame history-main">
-            <Contacts serverAvailable={serverBrain} />
+            <Contacts />
           </main>
         )}
 
         {view === "workflows" && (
           <main key={view} className="view-frame history-main">
-            <Workflows serverAvailable={serverBrain} />
-          </main>
-        )}
-
-        {view === "applications" && (
-          <main key={view} className="view-frame history-main">
-            <SectionPlaceholder
-              icon="applications"
-              title="Заявки"
-              description="Здесь будут перечислены заявки, к которым подключён ваш голосовой агент."
-            />
+            <Workflows />
           </main>
         )}
 
@@ -353,14 +240,14 @@ export default function OperatorConsole() {
             <SectionPlaceholder
               icon="analytics"
               title="Аналитика"
-              description="Здесь будут показаны объём звонков, результаты и динамика длительности."
+              description="Сводка по звонкам, их результатам и длительности появится здесь."
             />
           </main>
         )}
 
         {view === "profile" && (
           <main key={view} className="view-frame history-main">
-            <ProfilePage user={user} />
+            <ProfilePage connection={connection} agent={agentLabel} />
           </main>
         )}
 
@@ -371,6 +258,7 @@ export default function OperatorConsole() {
               onThemeChange={setTheme}
               onConfigure={openConfig}
               configLocked={isActive}
+              onOpenConnection={openConfig}
             />
           </main>
         )}
@@ -382,14 +270,13 @@ export default function OperatorConsole() {
 
               <CallSummary
                 record={record}
-                configured={Boolean(agentConfig)}
+                configured={isConfiguredAgent}
                 view={summaryView}
                 onViewChange={(next) => setRecordView({ callId: record.callId, view: next })}
                 onConfigure={openConfig}
               />
 
               <VoicePanel
-                profile={profile}
                 callState={agent.callState}
                 duration={agent.duration}
                 interim={agent.voice.interim}
@@ -402,6 +289,7 @@ export default function OperatorConsole() {
                 acting={Boolean(agent.messages.at(-1)?.toolCalls?.length) && isActive}
                 needsAudio={agent.needsAudio}
                 onUnlockAudio={agent.unlockAudio}
+                engine={agent.engine}
               />
             </div>
 
@@ -421,6 +309,22 @@ export default function OperatorConsole() {
           </main>
         )}
       </div>
+
+      {!agent.engine.ok && <ConnectionHint engine={agent.engine} onOpen={openConfig} />}
+    </div>
+  );
+}
+
+// Shown once at the foot of the console when a call cannot be started at all. It is a
+// link, not a dialog: the console is still fully usable, and a modal would be in the way
+// of reading a call record.
+function ConnectionHint({ engine, onOpen }) {
+  return (
+    <div className="voice-notice-bar" role="status">
+      <span>{engine.note}</span>
+      <button type="button" onClick={onOpen}>
+        Открыть настройки подключения
+      </button>
     </div>
   );
 }

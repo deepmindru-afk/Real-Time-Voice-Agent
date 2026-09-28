@@ -3,14 +3,15 @@ import Icon from "./Icon";
 import CallVisualizer from "../voice/CallVisualizer";
 import AiActivity from "../voice/AiActivity";
 import { visualForCallState } from "../../runtime/voiceState.js";
-import { voiceSupport } from "../../runtime/useVoice.js";
 import { CALL_STATE_TEXT, formatTime } from "../../runtime/format.js";
 
-// The call controls: start or stop the conversation, type instead of speaking, or
-// pick a suggested question. The conversation itself is shown in Agent Response
-// and the outcome in Call Summary.
+// The call controls: start or stop the conversation, or type instead of speaking. The
+// conversation itself is shown in Agent Response and the outcome in Call Summary.
+//
+// There are no suggestion chips here. They used to come from a built-in vertical profile
+// and there is no longer one: what the agent can be asked is the agent's own business,
+// and a list of prompts invented by this app would only be a guess about it.
 export default function VoicePanel({
-  profile,
   callState,
   duration,
   interim,
@@ -23,6 +24,7 @@ export default function VoicePanel({
   acting = false,
   needsAudio = false,
   onUnlockAudio,
+  engine,
 }) {
   const [draft, setDraft] = useState("");
 
@@ -46,6 +48,7 @@ export default function VoicePanel({
             type="button"
             className="voice-orb-button"
             onClick={isActive ? onStop : callState === "ended" ? onReset : onStart}
+            disabled={!isActive && !engine?.ok}
             aria-label={
               isActive
                 ? "Завершить разговор"
@@ -75,7 +78,9 @@ export default function VoicePanel({
               </div>
             </>
           ) : (
-            <div className="dock-hint">Говорите или введите текст ниже</div>
+            <div className="dock-hint">
+              {engine?.ok ? "Говорите или введите текст ниже" : "Сначала настройте подключение к LiveKit"}
+            </div>
           )}
         </div>
 
@@ -90,6 +95,7 @@ export default function VoicePanel({
               type="button"
               className="start-button"
               onClick={callState === "ended" ? onReset : onStart}
+              disabled={!engine?.ok}
             >
               <Icon name="microphone" size={18} />
               {callState === "ended" ? "Начать новый разговор" : "Начать разговор"}
@@ -120,15 +126,7 @@ export default function VoicePanel({
         </p>
       )}
 
-      {/* The browser engine needs its own speech recognition. LiveKit does the
-          recognition on its own side, so this warning is only ever shown when the
-          local engine is the one actually running. */}
-      {!voiceSupport.recognition && (
-        <p className="voice-notice">
-          Этот браузер не распознаёт речь локально (для голоса используйте Chrome или Edge). В режиме
-          LiveKit распознавание выполняет агент. Вы также можете вводить текст ниже.
-        </p>
-      )}
+      {!engine?.ok && engine?.note && <p className="voice-notice">{engine.note}</p>}
 
       <form className="type-row" onSubmit={submit}>
         <input
@@ -144,17 +142,6 @@ export default function VoicePanel({
         </button>
       </form>
 
-      <div className="suggestions">
-        <div className="suggestion-label">💡 Попробуйте сказать:</div>
-
-        <div className="prompt-list">
-          {profile.prompts.map((prompt) => (
-            <button key={prompt} onClick={() => onSend(prompt)} disabled={callState === "ended"}>
-              «{prompt}»
-            </button>
-          ))}
-        </div>
-      </div>
     </section>
   );
 }

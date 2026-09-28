@@ -1,27 +1,24 @@
 import { useId } from "react";
 import Icon from "./Icon";
-import { INDUSTRIES, LIMITS, OTHER, ROLE_SUGGESTIONS } from "../../runtime/agentConfig.js";
+import { LIMITS } from "../../runtime/agentConfig.js";
 
-// The sidebar's "Сценарий применения и настройка агента" item. It is its own section, not
-// a parent of the other pages: it only expands to show the few fields that matter
-// most. The rest of the configuration lives in the full panel it opens.
+// The sidebar's "Подключение и агент" item. It is its own section rather than a parent of
+// the other screens: it shows whether the endpoint is set and how the agent is called, and
+// opens the panel where both are edited.
 export default function AgentUseCaseConfig({
   expanded,
   onToggle,
-  draft,
+  label,
   onDraftChange,
   configured,
   dirty,
-  locked,
   saved,
   onConfigure,
-  children,
+  connection,
 }) {
   const bodyId = useId();
-  const roleListId = useId();
-  const roles = ROLE_SUGGESTIONS[draft.industry] ?? [];
 
-  const set = (key) => (event) => onDraftChange({ [key]: event.target.value });
+  const set = (key) => (event) => onDraftChange({ ...label, [key]: event.target.value });
 
   return (
     <section className={`config-section ${expanded ? "is-open" : ""}`}>
@@ -33,93 +30,62 @@ export default function AgentUseCaseConfig({
         onClick={onToggle}
       >
         <Icon name="settings" size={21} />
-        <span>Сценарий применения и настройка агента</span>
+        <span>Подключение и агент</span>
         <Icon name={expanded ? "chevronUp" : "chevronRight"} size={18} />
       </button>
 
       {expanded && (
         <div className="config-body-side" id={bodyId}>
-          <p className="config-intro">Опишите, что должен делать ваш голосовой агент.</p>
-
-          <fieldset className="config-quick" disabled={locked}>
-            <label htmlFor="side-industry">Сценарий применения / отрасль</label>
-            <select id="side-industry" value={draft.industry} onChange={set("industry")}>
-              <option value="">Выберите сценарий...</option>
-              {INDUSTRIES.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-
-            {draft.industry === OTHER && (
-              <input
-                type="text"
-                aria-label="Ваш сценарий применения или отрасль"
-                value={draft.industryOther}
-                maxLength={LIMITS.short}
-                placeholder="Ваша отрасль, например «Логистика»"
-                onChange={set("industryOther")}
-              />
-            )}
-
+          <fieldset className="config-quick">
             <label htmlFor="side-agent-name">Название агента</label>
             <input
               id="side-agent-name"
               type="text"
-              value={draft.agentName}
+              value={label.agentName}
               maxLength={LIMITS.agentName}
-              placeholder="например, АссистентПортал"
+              placeholder="Ассистент Портал"
               onChange={set("agentName")}
             />
 
-            <label htmlFor="side-role">Роль агента</label>
+            <label htmlFor="side-role">Роль</label>
             <input
               id="side-role"
               type="text"
-              list={roles.length ? roleListId : undefined}
-              value={draft.role}
+              value={label.role}
               maxLength={LIMITS.role}
-              placeholder={roles[0] ?? "Какую роль он выполняет?"}
+              placeholder="Координатор приёма"
               onChange={set("role")}
             />
-            {roles.length > 0 && (
-              <datalist id={roleListId}>
-                {roles.map((role) => (
-                  <option key={role} value={role} />
-                ))}
-              </datalist>
-            )}
 
             <label htmlFor="side-purpose">Назначение</label>
             <textarea
               id="side-purpose"
-              rows={3}
-              value={draft.purpose}
+              rows={2}
+              value={label.purpose}
               maxLength={LIMITS.purpose}
-              placeholder="В чём он поможет пользователям?"
+              placeholder="В одной строке: зачем он нужен"
               onChange={set("purpose")}
             />
           </fieldset>
 
-          <button type="button" className="config-open" disabled={locked} onClick={onConfigure}>
-            {configured ? "Изменить настройку" : "Настроить агента"}
+          <button type="button" className="config-open" onClick={onConfigure}>
+            Открыть подключение
             <Icon name="arrowRight" size={16} />
           </button>
 
           <p className="config-status" role="status">
-            {saved
-              ? "✓ Настройка агента сохранена"
-              : dirty
-                ? "Есть несохранённые изменения. Откройте «Настроить агента», чтобы сохранить."
-                : configured
-                  ? "✓ Настроен"
-                  : ""}
+            {saved ? "✓ Сохранено" : dirty ? "Есть несохранённые изменения." : configured ? "✓ Настроено" : ""}
           </p>
 
-          {locked && <p className="profile-hint">Завершите звонок, чтобы изменить настройки.</p>}
-
-          {children}
+          <div className="config-data">
+            <p className="profile-hint">
+              {connection?.tokenEndpoint
+                ? `Эндпоинт токенов: ${connection.tokenEndpoint}`
+                : connection?.token
+                  ? "Задан готовый токен без эндпоинта."
+                  : "Эндпоинт токенов не задан."}
+            </p>
+          </div>
         </div>
       )}
     </section>

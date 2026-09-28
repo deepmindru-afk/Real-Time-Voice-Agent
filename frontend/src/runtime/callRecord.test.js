@@ -1,48 +1,56 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { buildCallRecord, callStatus, conversationTitle, describeAgent, flowStep } from "./callRecord.js";
-import { displayName } from "./format.js";
 
-const profile = { name: "Credit Underwriting", description: "Reviews loan files." };
+const label = (agentName = "Ассистент Портал", role = "Координатор приёма", industry = "Медицина и здоровье") => ({
+  agentName,
+  role,
+  industry,
+  purpose: "Записывает на приём и переносит его.",
+});
 
-const config = (industry, role, agentName = "Agent") => ({ industry, role, agentName, purpose: "Help." });
-
+// The shape buildTranscriptSummary() produces (src/runtime/livekit/summary.js): the
+// call record is only ever fed by that, so the test uses its own wording.
 const summary = {
-  callId: "CALL-20260920-104406",
+  callId: "ЗВОНОК-20260920-104406",
   startedAt: Date.parse("2026-09-20T10:44:00Z"),
   durationSeconds: 272,
   outcome: "completed",
-  summary: "Discussed production.",
-  keyPoints: ["Covered: Monthly Production", "Covered: Site-wise Data", "1 guardrail block during the call"],
-  actionsTaken: ["AI disclosure given at start of call"],
-  nextSteps: ["Send report"],
+  summary: "Агент ответил в 4 реплики.",
+  keyPoints: ["Обсуждено: перенос приёма", "Обсуждено: свободное окно", "Вопросов не поступило"],
+  actionsTaken: ["В начале разговора сообщено, что на линии ИИ-ассистент"],
+  nextSteps: [],
   evidence: [],
   transcript: [],
   audit: [],
 };
 
+// The role is used whole: a Russian job title is a genitive noun phrase, so trimming the
+// leading "Ассистент" would leave "поддержки пациентов", which is not a title.
 test("the title follows the configured role, whatever the domain", () => {
-  assert.equal(conversationTitle({ role: "Patient Support Assistant" }), "Patient Support Conversation");
-  assert.equal(conversationTitle({ role: "Customer Support Executive" }), "Customer Support Conversation");
-  assert.equal(conversationTitle({ role: "Mining Operations Support" }), "Mining Operations Support Conversation");
-  assert.equal(conversationTitle({ role: "Assistant" }), "Assistant Conversation");
+  assert.equal(conversationTitle({ role: "Ассистент поддержки пациентов" }), "Разговор — Ассистент поддержки пациентов");
+  assert.equal(conversationTitle({ role: "Специалист поддержки клиентов" }), "Разговор — Специалист поддержки клиентов");
+  assert.equal(conversationTitle({ role: "Поддержка добывающих операций" }), "Разговор — Поддержка добывающих операций");
+  assert.equal(conversationTitle({ role: "Ассистент" }), "Разговор — Ассистент");
 });
 
-test("the title falls back to the industry, then the profile, then a generic name", () => {
-  assert.equal(conversationTitle({ industry: "Education" }), "Education Conversation");
-  assert.equal(conversationTitle({ fallback: "Telecom Support" }), "Telecom Support Conversation");
-  assert.equal(conversationTitle({}), "Voice Conversation");
+test("the title falls back to the industry, then the given name, then a generic one", () => {
+  assert.equal(conversationTitle({ industry: "Образование" }), "Разговор — Образование");
+  assert.equal(conversationTitle({ fallback: "Поддержка связи" }), "Разговор — Поддержка связи");
+  assert.equal(conversationTitle({}), "Голосовой разговор");
 });
 
-test("an unconfigured agent is described by the built-in profile", () => {
-  assert.deepEqual(describeAgent(null, profile), {
+test("an undescribed agent is named generically, and says it is undescribed", () => {
+  assert.deepEqual(describeAgent(null), {
     configured: false,
-    agentName: "Credit Underwriting",
-    role: "Credit Underwriting",
+    agentName: "Голосовой агент",
+    role: "",
     industry: "",
-    purpose: "Reviews loan files.",
+    purpose: "",
   });
-  assert.equal(describeAgent(config("Mining", "Ops", "MineAssist"), profile).agentName, "MineAssist");
+
+  assert.equal(describeAgent(label("Ассистент Портал")).agentName, "Ассистент Портал");
 });
 
 test("call status follows the call state and whether a summary exists", () => {
@@ -54,7 +62,7 @@ test("call status follows the call state and whether a summary exists", () => {
   assert.equal(callStatus("ended", summary, false), "completed");
 });
 
-test("the flow moves Configure -> Start -> Complete -> Review", () => {
+test("the flow moves Настроить -> Начать -> Завершить -> Изучить", () => {
   assert.equal(flowStep("idle", false), 0);
   assert.equal(flowStep("idle", true), 1);
   assert.equal(flowStep("live", true), 2);
@@ -62,89 +70,76 @@ test("the flow moves Configure -> Start -> Complete -> Review", () => {
   assert.equal(flowStep("completed", true), 3);
 });
 
-test("the contact is the signed-in user, or Operator without a sign-in", () => {
-  assert.equal(displayName({ email: "asha.rao@example.com" }), "asha.rao");
-  assert.equal(displayName(null), "Operator");
-  assert.equal(displayName({ email: "" }), "Operator");
-});
-
 test("a finished call becomes a complete record", () => {
   const record = buildCallRecord({
-    config: config("Healthcare", "Patient Support Assistant", "CareBot"),
-    profile,
-    user: { email: "nurse@example.com" },
+    config: label("Ассистент Портал", "Ассистент поддержки пациентов", "Медицина и здоровье"),
     callState: "ended",
     summary,
+    contact: "Анна",
   });
 
   assert.equal(record.status, "completed");
-  assert.equal(record.title, "Patient Support Conversation");
-  assert.equal(record.contact, "nurse");
-  assert.equal(record.agent.role, "Patient Support Assistant");
-  assert.equal(record.callId, "CALL-20260920-104406");
+  assert.equal(record.title, "Разговор — Ассистент поддержки пациентов");
+  assert.equal(record.contact, "Анна");
+  assert.equal(record.agent.role, "Ассистент поддержки пациентов");
+  assert.equal(record.callId, "ЗВОНОК-20260920-104406");
   assert.equal(record.durationSeconds, 272);
-  assert.deepEqual(record.topics, ["Monthly Production", "Site-wise Data"]);
+  assert.deepEqual(record.topics, ["перенос приёма", "свободное окно"]);
   assert.equal(record.outcome.ok, true);
-  assert.equal(record.outcome.detail, "The conversation was handled by CareBot.");
-  assert.match(record.notes, /nurse asked about monthly production, site-wise data\./);
-  assert.match(record.notes, /CareBot provided the requested information\./);
-  assert.match(record.notes, /1 guardrail block during the call\./);
+  assert.equal(record.outcome.detail, "Разговор проведён агентом «Ассистент Портал».");
+  assert.match(record.notes, /Анна спрашивал\(а\): перенос приёма, свободное окно\./);
+  assert.match(record.notes, /Ассистент Портал предоставил\(а\) запрошенную информацию\./);
 });
 
 test("confirmed actions are counted in the notes", () => {
   const record = buildCallRecord({
     config: null,
-    profile,
-    user: null,
     callState: "ended",
     summary: {
       ...summary,
-      actionsTaken: ["AI disclosure given at start of call", "Executed after confirmation: Book visit"],
+      actionsTaken: ["В начале разговора сообщено, что на линии ИИ-ассистент", "Выполнено: перенос приёма"],
     },
   });
 
-  assert.match(record.notes, /Operator asked about/);
-  assert.match(record.notes, /carried out 1 confirmed action\./);
+  assert.match(record.notes, /Оператор спрашивал\(а\)/);
+  assert.match(record.notes, /выполнил\(а\) 1 подтверждённое действие\./);
 });
 
 test("a call with no questions has no topics and says so", () => {
   const record = buildCallRecord({
     config: null,
-    profile,
-    user: null,
     callState: "ended",
-    summary: { ...summary, keyPoints: ["No questions were asked"] },
+    summary: { ...summary, keyPoints: ["Вопросов не поступило"] },
   });
 
   assert.deepEqual(record.topics, []);
-  assert.match(record.notes, /did not ask anything/);
+  assert.match(record.notes, /не задал\(а\) вопросов/);
 });
 
 test("a call that did not complete says what happened instead of succeeding", () => {
   const record = buildCallRecord({
     config: null,
-    profile,
-    user: null,
     callState: "ended",
     summary: { ...summary, outcome: "wrong_person" },
   });
 
   assert.equal(record.outcome.ok, false);
-  assert.equal(record.outcome.headline, "Call ended: wrong person");
+  assert.equal(record.outcome.headline, "Звонок завершён: wrong person");
 });
 
 test("before a call there is nothing to summarise and no invented details", () => {
-  const record = buildCallRecord({ config: null, profile, user: null, callState: "idle" });
+  const record = buildCallRecord({ config: null, callState: "idle" });
 
   assert.equal(record.status, "idle");
   assert.equal(record.callId, null);
   assert.equal(record.durationSeconds, null);
   assert.equal(record.outcome, null);
   assert.equal(record.notes, "");
+  assert.equal(record.contact, "Оператор");
 });
 
 test("a live call shows its running duration and start time", () => {
-  const record = buildCallRecord({ config: null, profile, user: null, callState: "listening", duration: 12, startedAt: 5 });
+  const record = buildCallRecord({ config: null, callState: "listening", duration: 12, startedAt: 5 });
 
   assert.equal(record.status, "live");
   assert.equal(record.durationSeconds, 12);
@@ -152,8 +147,8 @@ test("a live call shows its running duration and start time", () => {
 });
 
 test("a call that ended without a summary carries the connection error", () => {
-  const record = buildCallRecord({ config: null, profile, user: null, callState: "ended", callError: "Could not connect." });
+  const record = buildCallRecord({ config: null, callState: "ended", callError: "Не удалось получить токен LiveKit." });
 
   assert.equal(record.status, "unavailable");
-  assert.equal(record.error, "Could not connect.");
+  assert.equal(record.error, "Не удалось получить токен LiveKit.");
 });

@@ -2,275 +2,79 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
-  CUSTOM,
   LIMITS,
-  INDUSTRIES,
-  OTHER,
-  ROLE_SUGGESTIONS,
-  emptyConfig,
-  fromAgentPayload,
+  emptyLabel,
   isConfigured,
-  loadConfig,
-  normalizeConfig,
-  resolveConfig,
-  sameConfig,
-  saveConfig,
-  toAgentPayload,
-  validateConfig,
+  loadLabel,
+  normalizeLabel,
+  sameLabel,
+  saveLabel,
+  validateLabel,
 } from "./agentConfig.js";
 
-const mining = () => ({
-  ...emptyConfig(),
-  industry: "Mining",
-  agentName: "MineAssist",
-  role: "Mining Operations Support Agent",
-  purpose: "Help mine operators understand production data.",
-  targetUsers: ["Operators", "Managers"],
-  primaryTasks: ["Explain reports"],
-  conversationBehavior: ["Professional", "Concise"],
-  language: "English + Hindi",
-});
-
-const memoryStorage = () => {
-  const items = new Map();
+const storage = (initial = {}) => {
+  const map = new Map(Object.entries(initial));
 
   return {
-    getItem: (key) => items.get(key) ?? null,
-    setItem: (key, value) => items.set(key, value),
+    getItem: (key) => (map.has(key) ? map.get(key) : null),
+    setItem: (key, value) => map.set(key, value),
+    removeItem: (key) => map.delete(key),
   };
 };
 
-test("an empty configuration is not a valid agent", () => {
-  const errors = validateConfig(emptyConfig());
+const full = () => ({ agentName: "Ассистент Портал", role: "Координатор приёма", purpose: "Записывает и переносит приёмы." });
 
-  assert.deepEqual(Object.keys(errors).sort(), ["agentName", "industry", "purpose", "role"]);
-  assert.equal(isConfigured(emptyConfig()), false);
-  assert.equal(resolveConfig(emptyConfig()), null);
+test("a missing label is an empty one, not undefined", () => {
+  assert.deepEqual(normalizeLabel(undefined), emptyLabel());
+  assert.deepEqual(normalizeLabel(null), emptyLabel());
+  assert.deepEqual(normalizeLabel("nonsense"), emptyLabel());
 });
 
-test("a filled-in configuration is valid, and instructions stay optional", () => {
-  assert.deepEqual(validateConfig(mining()), {});
-  assert.equal(mining().additionalInstructions, "");
-});
-
-test("whitespace does not count as an answer", () => {
-  const errors = validateConfig({ ...mining(), agentName: "   ", purpose: "\n" });
-
-  assert.deepEqual(Object.keys(errors).sort(), ["agentName", "purpose"]);
-});
-
-test("Other needs a description, and so do Custom behavior and Other language", () => {
-  const errors = validateConfig({
-    ...mining(),
-    industry: OTHER,
-    language: OTHER,
-    conversationBehavior: [CUSTOM],
-  });
-
-  assert.deepEqual(Object.keys(errors).sort(), ["behaviorCustom", "industryOther", "languageOther"]);
-});
-
-test("Other and Custom resolve to what was typed", () => {
-  const resolved = resolveConfig({
-    ...mining(),
-    industry: OTHER,
-    industryOther: "Aviation",
-    language: OTHER,
-    languageOther: "Tamil",
-    conversationBehavior: ["Concise", CUSTOM],
-    behaviorCustom: "Calm under pressure",
-  });
-
-  assert.equal(resolved.industry, "Aviation");
-  assert.equal(resolved.language, "Tamil");
-  assert.deepEqual(resolved.conversationBehavior, ["Concise", "Calm under pressure"]);
-});
-
-test("resolving gives the flat context a call reads", () => {
-  assert.deepEqual(resolveConfig(mining()), {
-    industry: "Mining",
-    agentName: "MineAssist",
-    role: "Mining Operations Support Agent",
-    purpose: "Help mine operators understand production data.",
-    targetUsers: ["Operators", "Managers"],
-    primaryTasks: ["Explain reports"],
-    domainContext: "",
-    conversationBehavior: ["Professional", "Concise"],
-    language: "English + Hindi",
-    voice: "",
-    additionalInstructions: "",
-  });
-});
-
-test("normalizing trims, de-duplicates, caps and drops unknown values", () => {
-  const value = normalizeConfig({
-    ...mining(),
-    agentName: `  ${"x".repeat(200)}  `,
-    targetUsers: [" Operators ", "operators", "", 7, "Managers"],
-    primaryTasks: Array.from({ length: 30 }, (_, index) => `task ${index}`),
-    conversationBehavior: ["Concise", "Sarcastic"],
-    industry: "Piracy",
-    language: "Klingon",
-  });
+test("values are trimmed and capped", () => {
+  const value = normalizeLabel({ agentName: `  ${"а".repeat(200)}  `, role: "  роль  ", purpose: "x".repeat(1000) });
 
   assert.equal(value.agentName.length, LIMITS.agentName);
-  assert.deepEqual(value.targetUsers, ["Operators", "Managers"]);
-  assert.equal(value.primaryTasks.length, LIMITS.chips);
-  assert.deepEqual(value.conversationBehavior, ["Concise"]);
-  assert.equal(value.industry, "");
-  assert.equal(value.language, "English");
+  assert.equal(value.role, "роль");
+  assert.equal(value.purpose.length, LIMITS.purpose);
 });
 
-test("junk input still gives a complete configuration", () => {
-  for (const junk of [null, undefined, "text", 5, [], { targetUsers: "Operators" }]) {
-    assert.deepEqual(Object.keys(normalizeConfig(junk)), Object.keys(emptyConfig()));
-  }
+test("only a name is required", () => {
+  assert.equal(isConfigured(emptyLabel()), false);
+  assert.equal(isConfigured({ agentName: "Агент" }), true);
+  assert.equal(isConfigured({ role: "роль без имени" }), false);
+
+  assert.deepEqual(validateLabel(emptyLabel()), { agentName: "Укажите, как называть агента." });
+  assert.deepEqual(validateLabel(full()), {});
 });
 
-test("a description for a choice that is no longer selected is dropped", () => {
-  const value = normalizeConfig({ ...mining(), industryOther: "Aviation", languageOther: "Tamil", behaviorCustom: "x" });
-
-  assert.equal(value.industryOther, "");
-  assert.equal(value.languageOther, "");
-  assert.equal(value.behaviorCustom, "");
+test("sameLabel ignores whitespace and key order", () => {
+  assert.equal(sameLabel({ agentName: "Агент", role: "Роль" }, { role: " Роль ", agentName: "Агент " }), true);
+  assert.equal(sameLabel({ agentName: "Агент" }, { agentName: "Другой" }), false);
 });
 
-test("a saved configuration is loaded back", () => {
-  const storage = memoryStorage();
+test("the label round-trips through storage", () => {
+  const store = storage();
 
-  assert.equal(saveConfig(mining(), storage), true);
-  assert.deepEqual(loadConfig(storage), normalizeConfig(mining()));
+  assert.equal(saveLabel(full(), store), true);
+  assert.deepEqual(loadLabel(store), full());
 });
 
-test("nothing, garbage, or an invalid configuration in storage loads as none", () => {
-  const storage = memoryStorage();
-
-  assert.equal(loadConfig(storage), null);
-
-  storage.setItem("voice-agent-config", "{not json");
-  assert.equal(loadConfig(storage), null);
-
-  storage.setItem("voice-agent-config", JSON.stringify({ agentName: "Half done" }));
-  assert.equal(loadConfig(storage), null);
+test("unreadable or missing storage yields an empty label, never a throw", () => {
+  assert.deepEqual(loadLabel(storage({ "portal-agent-label": "{not json" })), emptyLabel());
+  assert.deepEqual(loadLabel(storage()), emptyLabel());
+  assert.deepEqual(loadLabel(undefined), emptyLabel()); // no localStorage at all, as in Node
 });
 
-test("blocked storage never throws", () => {
+test("blocked storage reports failure instead of pretending", () => {
   const blocked = {
     getItem: () => {
-      throw new Error("denied");
+      throw new Error("blocked");
     },
     setItem: () => {
-      throw new Error("denied");
+      throw new Error("blocked");
     },
   };
 
-  assert.equal(loadConfig(blocked), null);
-  assert.equal(saveConfig(mining(), blocked), false);
-  assert.equal(loadConfig(undefined), null); // no localStorage at all, as in Node
-});
-
-test("two configs are the same once cleaned, whatever whitespace or key order", () => {
-  const a = mining();
-  const b = { ...a, agentName: "  MineAssist  ", role: `${a.role} ` };
-
-  assert.equal(sameConfig(a, b), true);
-  assert.equal(sameConfig(a, { ...a, purpose: "Something else." }), false);
-  assert.equal(sameConfig(null, emptyConfig()), true);
-});
-
-test("role suggestions only exist for known industries, so any domain still works", () => {
-  for (const industry of Object.keys(ROLE_SUGGESTIONS)) {
-    assert.ok(INDUSTRIES.includes(industry), `${industry} is not an industry`);
-    assert.ok(ROLE_SUGGESTIONS[industry].length > 0);
-  }
-
-  assert.equal(ROLE_SUGGESTIONS[OTHER], undefined);
-});
-
-// --- the backend Agent payload (Step 18B) ---------------------------------------------------
-
-test("an unconfigured agent has no payload to send", () => {
-  assert.equal(toAgentPayload(emptyConfig()), null);
-});
-
-test("a valid configuration becomes the shape the Agent API reads", () => {
-  assert.deepEqual(toAgentPayload(mining()), {
-    name: "MineAssist",
-    role: "Mining Operations Support Agent",
-    industry: "Mining",
-    purpose: "Help mine operators understand production data.",
-    target_users: ["Operators", "Managers"],
-    primary_tasks: ["Explain reports"],
-    behavior_config: { tone: ["Professional", "Concise"] },
-    instructions: { domain_context: "", additional_instructions: "" },
-    language: "English + Hindi",
-    voice: null,
-  });
-});
-
-test("Other industry, Other language and a Custom behavior are resolved before sending, same as resolveConfig", () => {
-  const payload = toAgentPayload({
-    ...mining(),
-    industry: OTHER,
-    industryOther: "Aviation",
-    language: OTHER,
-    languageOther: "Tamil",
-    conversationBehavior: ["Concise", CUSTOM],
-    behaviorCustom: "Calm under pressure",
-  });
-
-  assert.equal(payload.industry, "Aviation");
-  assert.equal(payload.language, "Tamil");
-  assert.deepEqual(payload.behavior_config.tone, ["Concise", "Calm under pressure"]);
-});
-
-test("an agent loaded from the backend fills the form the same way the form would have produced it", () => {
-  assert.deepEqual(fromAgentPayload(toAgentPayload(mining())), normalizeConfig(mining()));
-});
-
-test("loading a backend agent never drops a value that is no longer a fixed choice: it becomes Other/Custom", () => {
-  const agent = {
-    name: "MineAssist",
-    role: "Mining Operations Support Agent",
-    industry: "Piracy on the high seas", // not one of the fixed INDUSTRIES
-    purpose: "Help mine operators understand production data.",
-    target_users: ["Operators"],
-    primary_tasks: [],
-    behavior_config: { tone: ["Concise", "Menacing"] }, // "Menacing" is not one of the fixed BEHAVIORS
-    instructions: { domain_context: "", additional_instructions: "" },
-    language: "Klingon", // not one of the fixed LANGUAGES
-    voice: null,
-  };
-
-  const form = fromAgentPayload(agent);
-
-  assert.equal(form.industry, OTHER);
-  assert.equal(form.industryOther, "Piracy on the high seas");
-  assert.deepEqual(form.conversationBehavior, ["Concise", CUSTOM]);
-  assert.equal(form.behaviorCustom, "Menacing");
-  assert.equal(form.language, OTHER);
-  assert.equal(form.languageOther, "Klingon");
-
-  // And validates as a complete, savable configuration again.
-  assert.deepEqual(validateConfig(form), {});
-});
-
-test("a backend agent with nothing in its instructions or behavior still loads as a valid, empty-optional form", () => {
-  const form = fromAgentPayload({
-    name: "Bare",
-    role: "Role",
-    industry: "Mining",
-    purpose: "Purpose.",
-    target_users: [],
-    primary_tasks: [],
-    behavior_config: {},
-    instructions: {},
-    language: "English",
-    voice: null,
-  });
-
-  assert.deepEqual(validateConfig(form), {});
-  assert.equal(form.domainContext, "");
-  assert.equal(form.additionalInstructions, "");
-  assert.deepEqual(form.conversationBehavior, []);
+  assert.equal(saveLabel(full(), blocked), false);
+  assert.deepEqual(loadLabel(blocked), emptyLabel());
 });

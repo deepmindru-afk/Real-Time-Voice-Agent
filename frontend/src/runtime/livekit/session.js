@@ -24,10 +24,8 @@
 //   { type: "error", message }
 
 import { ParticipantEvent, Room, RoomEvent, Track } from "livekit-client";
-import { getJson } from "../api.js";
-import { mapResult } from "../results.js";
 import { buildTranscriptSummary } from "./summary.js";
-import { fetchLiveKitToken } from "./token.js";
+import { requestToken } from "./token.js";
 
 // The topic a LiveKit agent listens on for typed input. The agent interrupts its own
 // speech to answer, exactly as it would if the words had been spoken.
@@ -63,10 +61,9 @@ const STATE_FOR_AGENT = {
 
 const normalize = (text) => text.toLowerCase().replace(/\s+/g, " ").trim();
 
-export function createLiveKitSession({ onEvent, request = {} }) {
+export function createLiveKitSession({ onEvent, connection = null, request = {} }) {
   let room = null;
   let stopped = false;
-  let callId = null;
   let startedAt = 0;
   let lastState = null;
   let agentRef = null;
@@ -281,15 +278,10 @@ export function createLiveKitSession({ onEvent, request = {} }) {
   return {
     name: "livekit",
 
-    get callId() {
-      return callId;
-    },
-
     // Joins the room, publishes the microphone, and waits for the agent to arrive.
     async start() {
-      const grant = await fetchLiveKitToken(request);
+      const grant = await requestToken({ connection, participantName: request.participantName });
 
-      callId = grant.callId;
       startedAt = Date.now();
 
       room = new Room({ adaptiveStream: false, dynacast: false });
@@ -339,7 +331,7 @@ export function createLiveKitSession({ onEvent, request = {} }) {
 
       syncState();
 
-      return { callId: grant.callId };
+      return { room: grant.room };
     },
 
     // Typed input. The agent treats it exactly like something that was said, and
@@ -381,7 +373,8 @@ export function createLiveKitSession({ onEvent, request = {} }) {
       }
     },
 
-    // Leaves the room and produces the call's result.
+    // Leaves the room and produces the call's result. There is no server-side call record
+    // to ask - the transcript was built in this tab, so the summary is built from it too.
     async stop() {
       if (stopped) return null;
 
@@ -397,18 +390,7 @@ export function createLiveKitSession({ onEvent, request = {} }) {
 
       release();
 
-      // When the deployment ties this room to a call record, the server's own summary is
-      // the authoritative one. Otherwise build it from the transcript already in hand.
-      if (callId) {
-        try {
-          return mapResult(await getJson(`/api/calls/${encodeURIComponent(callId)}/result`));
-        } catch {
-          // Fall through to the local one.
-        }
-      }
-
       return buildTranscriptSummary({
-        callId,
         startedAt,
         durationSeconds: seconds,
         transcript: transcript.map(({ id, speaker, text, at }) => ({ id, speaker, text, time: at })),

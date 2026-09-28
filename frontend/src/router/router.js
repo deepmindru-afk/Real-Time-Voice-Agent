@@ -5,8 +5,6 @@
 
 export const ROUTES = [
   { name: "landing", path: "/" },
-  { name: "signin", path: "/signin" },
-  { name: "signup", path: "/signup" },
   { name: "app", path: "/app", redirect: "/app/dashboard" },
   { name: "dashboard", path: "/app/dashboard" },
   { name: "agents", path: "/app/agents" },
@@ -62,15 +60,6 @@ export function matchRoute(pathname) {
   }
 
   return NOT_FOUND;
-}
-
-// Where a sign-in should go afterwards. Only in-app paths are honoured, so a crafted
-// "?next=https://elsewhere" (or "//elsewhere") can never bounce someone off the site.
-export function safeNext(next, fallback = "/app/dashboard") {
-  if (typeof next !== "string") return fallback;
-  if (!next.startsWith("/app") || next.startsWith("//") || next.includes("\\")) return fallback;
-
-  return matchRoute(next.split(/[?#]/)[0]).name === "not-found" ? fallback : next;
 }
 
 export const isAppRoute = (name) => ROUTES.some((route) => route.name === name && route.path.startsWith("/app") && !route.redirect);

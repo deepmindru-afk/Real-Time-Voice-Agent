@@ -1,10 +1,7 @@
 import Logo from "./Logo.jsx";
-import { useSignupOpen } from "../auth/context.js";
 import Link from "../router/Link.jsx";
 
 export default function NotFound() {
-  const signupOpen = useSignupOpen();
-
   return (
     <div className="gate">
       <div className="gate-card">
@@ -12,17 +9,12 @@ export default function NotFound() {
         <h1>Страница не найдена</h1>
         <p>По этому адресу ничего нет.</p>
         <div className="gate-actions">
-          <Link to="/" className="gate-btn gate-btn--primary">
-            Вернуться на сайт
+          <Link to="/app/dashboard" className="gate-btn gate-btn--primary">
+            Открыть консоль
           </Link>
-          <Link to="/signin" className="gate-btn">
-            Войти
+          <Link to="/" className="gate-btn">
+            На главную
           </Link>
-          {signupOpen && (
-            <Link to="/signup" className="gate-btn">
-              Регистрация
-            </Link>
-          )}
         </div>
       </div>
     </div>

@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { useAuth, useSignupOpen } from "../auth/context.js";
-import { canEnterApp } from "../auth/state.js";
 import Link from "../router/Link.jsx";
 import Arrow from "./Arrow.jsx";
 import Logo from "../components/Logo.jsx";
@@ -20,11 +18,8 @@ const LINKS = [
 ];
 
 export default function Nav() {
-  const { status } = useAuth();
   const ref = useRef(null);
   const [open, setOpen] = useState(false);
-  const inApp = canEnterApp(status);
-  const signupOpen = useSignupOpen();
 
   // Solid, blurred bar once the page has moved; transparent over the hero.
   useEffect(
@@ -69,27 +64,9 @@ export default function Nav() {
         </nav>
 
         <div className="lp-nav-actions">
-          {inApp ? (
-            <Link to="/app/dashboard" transition className="lp-btn lp-btn--primary lp-btn--sm">
-              Открыть консоль <Arrow size={16} />
-            </Link>
-          ) : (
-            <>
-              {/* with sign-up open, "Войти" is the quiet link and "Регистрация" the button; with it closed, sign-in is the only way in */}
-              <Link
-                to="/signin"
-                transition
-                className={signupOpen ? "lp-nav-signin" : "lp-btn lp-btn--primary lp-btn--sm"}
-              >
-                Войти {!signupOpen && <Arrow size={16} />}
-              </Link>
-              {signupOpen && (
-                <Link to="/signup" transition className="lp-btn lp-btn--primary lp-btn--sm">
-                  Регистрация <Arrow size={16} />
-                </Link>
-              )}
-            </>
-          )}
+          <Link to="/app/dashboard" transition className="lp-btn lp-btn--primary lp-btn--sm">
+            Открыть консоль <Arrow size={16} />
+          </Link>
         </div>
 
         <button
@@ -110,27 +87,9 @@ export default function Nav() {
             {label}
           </a>
         ))}
-        {inApp ? (
-          <Link to="/app/dashboard" transition tabIndex={open ? 0 : -1} className="lp-btn lp-btn--primary">
-            Открыть консоль <Arrow size={16} />
-          </Link>
-        ) : (
-          <>
-            <Link
-              to="/signin"
-              transition
-              tabIndex={open ? 0 : -1}
-              className={signupOpen ? "lp-btn lp-btn--ghost" : "lp-btn lp-btn--primary"}
-            >
-              Войти
-            </Link>
-            {signupOpen && (
-              <Link to="/signup" transition tabIndex={open ? 0 : -1} className="lp-btn lp-btn--primary">
-                Регистрация
-              </Link>
-            )}
-          </>
-        )}
+        <Link to="/app/dashboard" transition tabIndex={open ? 0 : -1} className="lp-btn lp-btn--primary">
+          Открыть консоль <Arrow size={16} />
+        </Link>
       </div>
     </header>
   );

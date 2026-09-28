@@ -1,69 +1,113 @@
-// One place that knows how to get a LiveKit access token, and the one place that
-// must never be wrong about security: the token is minted by our own server, never
-// in the browser. The API secret does not belong in this bundle.
+// Ask the token endpoint for a grant, and nothing else. This is the only network call
+// this app makes.
 //
-// The server side is a thin wrapper around the `livekit-server-sdk` AccessToken. It
-// mints a token scoped to ONE room, and - when the deployment uses explicit agent
-// dispatch - attaches a RoomAgentDispatch rule so the agent joins as soon as the
-// participant does. Because the grant and the dispatch rule are minted together, the
-// browser never has to know a room name, an agent name, an API key or a secret.
+// The endpoint ships alongside it (server/livekitToken.js, deployed as
+// api/livekit/token.js) and mints a grant with the `livekit-server-sdk` AccessToken: one
+// room, one identity, and a RoomAgentDispatch rule for the agent this deployment is
+// configured with. The API key and secret never leave the server, which is why the
+// request below carries nothing but a display name and whatever call context the console
+// has - there is no room name and no agent name to send, because the server decides both.
 //
-// Endpoint contract (all fields optional but `profile_id`):
+// The response follows the standard LiveKit token endpoint schema, so the same endpoint
+// serves any LiveKit client SDK:
 //
-//   POST <VITE_LIVEKIT_TOKEN_PATH, default "/api/livekit/token">
-//     { profile_id, agent_id, customer_ref, room_name, identity, agent_config }
-//   -> 200 { token, url?, room?, identity? }
+//   POST /api/livekit/token
+//     { participant_name, ...call context }
+//   -> 201 { server_url, participant_token, room, identity }
 //
-// `url` (wss://…) and `identity` are echoed back because the server knows them for
-// certain; both are optional here so a deployment that hard-codes them in the browser
-// build (VITE_LIVEKIT_URL) still works.
+// `room` and `identity` are echoed so the browser can say which call it is in; LiveKit
+// itself ignores them. A hand-pasted grant bypasses the call entirely, which is what makes
+// pointing the app at a project possible without the endpoint running.
 
-import { post } from "../api.js";
+import { normalizeConnection } from "./connection.js";
 
-export const TOKEN_PATH = import.meta.env?.VITE_LIVEKIT_TOKEN_PATH ?? "/api/livekit/token";
+// How long to wait before deciding the endpoint is not there. A service that accepts the
+// connection and then says nothing is worse than one that is plainly down: the operator
+// would sit watching "подключение" forever.
+const REQUEST_TIMEOUT_MS = 10000;
 
-export const FALLBACK_URL = import.meta.env?.VITE_LIVEKIT_URL ?? "";
-
-// How long a connection may take before we give up and let the caller fall back.
-const TOKEN_TIMEOUT_MS = 8000;
-
-export class LiveKitUnavailableError extends Error {
-  constructor(message) {
+export class TokenError extends Error {
+  constructor(message, cause) {
     super(message);
-    this.name = "LiveKitUnavailableError";
+    this.name = "TokenError";
+    this.cause = cause;
   }
 }
 
-// Resolves { token, url, room, identity }. Throws LiveKitUnavailableError when there
-// is no token, or no URL to connect it to - either of which means "this deployment is
-// not wired for LiveKit", and the call must fall back rather than fail.
-export async function fetchLiveKitToken(request = {}) {
-  let body;
+const isJson = (response) => (response.headers.get("content-type") ?? "").includes("json");
+
+async function readError(response) {
+  if (!isJson(response)) return `код ${response.status}`;
 
   try {
-    const response = await post(TOKEN_PATH, request, { signal: AbortSignal.timeout(TOKEN_TIMEOUT_MS) });
+    const body = await response.json();
 
-    body = await response.json();
+    // Whatever the endpoint called the problem: `error`, FastAPI's `detail`, `message`,
+    // or a validation array. Its own words beat ours.
+    const detail = body?.error ?? body?.detail ?? body?.message;
+
+    if (typeof detail === "string" && detail) return detail;
+    if (Array.isArray(detail) && detail[0]?.msg) return String(detail[0].msg);
+
+    return `код ${response.status}`;
+  } catch {
+    return `код ${response.status}`;
+  }
+}
+
+export async function requestToken({ connection, participantName } = {}) {
+  const value = normalizeConnection(connection);
+
+  // A pasted grant stands in for the endpoint entirely: the only path that makes no
+  // network call at all.
+  if (!value.tokenEndpoint) {
+    if (!value.token) throw new TokenError("Не задан ни эндпоинт токенов, ни готовый токен.");
+    if (!value.url) throw new TokenError("С готовым токеном нужен адрес LiveKit.");
+
+    return { token: value.token, url: value.url, room: null, identity: null };
+  }
+
+  let response;
+
+  try {
+    response = await fetch(value.tokenEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ participant_name: participantName || value.participantName || undefined }),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
   } catch (error) {
-    throw new LiveKitUnavailableError(
-      `Не удалось получить токен LiveKit: ${error instanceof Error ? error.message : "неизвестная ошибка"}`
+    // A CORS rejection reaches the browser as an opaque TypeError, and it is the most
+    // common reason a token service "is not there". Saying so saves a long guessing game.
+    throw new TokenError(
+      error?.name === "TimeoutError"
+        ? "Эндпоинт токенов не ответил вовремя."
+        : "Не удалось обратиться к эндпоинту токенов. Проверьте адрес и что он разрешает CORS для этого сайта.",
+      error
     );
   }
 
-  const url = body?.url || FALLBACK_URL;
-  const token = body?.token;
+  if (!response.ok) throw new TokenError(`Эндпоинт токенов отклонил запрос: ${await readError(response)}.`);
 
-  if (!token) throw new LiveKitUnavailableError("Сервер не вернул токен LiveKit.");
-  if (!url) throw new LiveKitUnavailableError("Не настроен адрес сервера LiveKit.");
+  let body;
+
+  try {
+    body = await response.json();
+  } catch (error) {
+    throw new TokenError("Эндпоинт токенов вернул не JSON.", error);
+  }
+
+  // The standard names first, then the short ones other token services use.
+  const token = body?.participant_token ?? body?.token;
+  const url = body?.server_url ?? body?.url ?? value.url;
+
+  if (!token) throw new TokenError("Эндпоинт токенов не вернул participant_token.");
+  if (!url) throw new TokenError("Эндпоинт токенов не вернул server_url, и адрес LiveKit не задан.");
 
   return {
     token,
     url,
-    room: body.room ?? request.room_name ?? null,
-    identity: body.identity ?? request.identity ?? null,
-    // The call id, when the deployment ties a room to a call record. Optional: with it
-    // the console can fetch the server's own summary, without it the summary is built
-    // from the transcript the browser already has.
-    callId: body.call_id ?? null,
+    room: body.room ?? null,
+    identity: body.identity ?? null,
   };
 }

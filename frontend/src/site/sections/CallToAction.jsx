@@ -1,4 +1,3 @@
-import { useSignupOpen } from "../../auth/context.js";
 import Link from "../../router/Link.jsx";
 import Arrow from "../Arrow.jsx";
 import { scrollToSection } from "../hooks/scrollTo.js";
@@ -10,8 +9,6 @@ import "./CallToAction.css";
 // The end of the story. The orb comes back, large, and reacts to the button: the product's own
 // answer to "should I try it?" is to answer you.
 export default function CallToAction() {
-  const signupOpen = useSignupOpen();
-
   return (
     <section className="cta">
       <OrbAnchor name="cta" className="cta-orb" opacity={0.85} />
@@ -27,7 +24,7 @@ export default function CallToAction() {
 
         <Reveal className="cta-actions" delay={0.18}>
           <Link
-            to={signupOpen ? "/signup" : "/signin"}
+            to="/app/dashboard"
             transition
             className="lp-btn lp-btn--primary lp-btn--lg"
             onPointerEnter={() => pulse(1.1)}
@@ -50,15 +47,8 @@ export default function CallToAction() {
         </Reveal>
 
         <Reveal as="p" className="cta-note" delay={0.26}>
-          {signupOpen ? (
-            <>
-              Уже есть аккаунт? <Link to="/signin" transition>Войти</Link>. Впервые здесь? <Link to="/signup" transition>Создайте его</Link>.
-            </>
-          ) : (
-            <>
-              Регистрация на этом сервере закрыта. <Link to="/signin" transition>Войдите</Link> под учётной записью, созданной вашим администратором.
-            </>
-          )}
+          Ничего устанавливать не нужно: консоль работает в браузере, а подключение к вашему LiveKit
+          настраивается прямо в ней.
         </Reveal>
       </div>
     </section>

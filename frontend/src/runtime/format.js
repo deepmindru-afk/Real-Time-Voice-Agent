@@ -35,14 +35,6 @@ export function formatClock(timestamp) {
   });
 }
 
-// Who the console is working as. The sign-in only has an email, so the name is
-// its local part; with no sign-in (offline mode) it is just "Оператор".
-export function displayName(user) {
-  const local = user?.email?.split("@")[0]?.trim();
-
-  return local || "Оператор";
-}
-
 export const CALL_STATE_TEXT = {
   idle: "Готов начать",
   connecting: "Соединение...",

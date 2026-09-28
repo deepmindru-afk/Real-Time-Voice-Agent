@@ -1,16 +1,6 @@
 import Icon from "./Icon";
-import ProfileMenu from "./ProfileMenu";
 
-export default function TopNavbar({
-  theme,
-  onToggleTheme,
-  workspaceLabel,
-  user,
-  onSignOut,
-  onNavigate,
-  sidebarOpen,
-  onToggleSidebar,
-}) {
+export default function TopNavbar({ theme, onToggleTheme, workspaceLabel, onNavigate, sidebarOpen, onToggleSidebar }) {
   const isDark = theme === "dark";
 
   return (
@@ -66,14 +56,16 @@ export default function TopNavbar({
           <span className={`theme-icon ${isDark ? "active" : ""}`}>☾</span>
         </button>
 
-        {/* User Profile */}
-        <ProfileMenu
-          user={user}
-          theme={theme}
-          onToggleTheme={onToggleTheme}
-          onNavigate={onNavigate}
-          onSignOut={onSignOut}
-        />
+        {/* Settings */}
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Настройки"
+          title="Настройки"
+          onClick={() => onNavigate("settings")}
+        >
+          <Icon name="settings" size={21} />
+        </button>
       </div>
     </header>
   );

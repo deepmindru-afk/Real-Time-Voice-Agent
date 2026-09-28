@@ -26,9 +26,16 @@ export const liveKitSupport = {
 export const isLiveKitSupported = () =>
   liveKitSupport.rtc && liveKitSupport.microphone && liveKitSupport.dataChannels && liveKitSupport.secure;
 
-// LiveKit is also only usable when the build says where the server is, or when the
-// token endpoint will tell us (a token alone is not enough - a URL is needed too).
-// `VITE_LIVEKIT_URL` is the explicit opt-in for a deployment that serves the token
-// from the same origin; without it, the server's /api/health is asked instead.
+// LiveKit is also only usable when there is somewhere to get a token. This app ships
+// that endpoint itself (api/livekit/token.js), so unless it has been switched off the
+// answer is yes - no backend to ask. A deployment that mints tokens elsewhere says so
+// either with VITE_LIVEKIT_URL, which is the ws:// the token will be used with, or
+// through `GET /api/health`, whose `livekit: true` is the server's own answer to "can
+// you mint a room token for me?".
+//
+// VITE_LIVEKIT_TOKEN_ENDPOINT=false turns the shipped endpoint off, for a build that
+// has no credentials behind it and would rather show the demo engine than fail a call.
+const tokenEndpoint = import.meta.env?.VITE_LIVEKIT_TOKEN_ENDPOINT !== "false";
+
 export const isLiveKitConfigured = (backend = null) =>
-  isLiveKitSupported() && (Boolean(import.meta.env?.VITE_LIVEKIT_URL) || Boolean(backend?.livekit));
+  isLiveKitSupported() && (tokenEndpoint || Boolean(import.meta.env?.VITE_LIVEKIT_URL) || Boolean(backend?.livekit));

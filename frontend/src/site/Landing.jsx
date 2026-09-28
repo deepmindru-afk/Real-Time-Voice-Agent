@@ -1,5 +1,4 @@
 import { lazy, Suspense } from "react";
-import { useSignupOpen } from "../auth/context.js";
 import Link from "../router/Link.jsx";
 import Chapters from "./Chapters.jsx";
 import Logo from "../components/Logo.jsx";
@@ -24,7 +23,6 @@ const CallToAction = lazy(() => import("./sections/CallToAction.jsx"));
 // below the hero are fetched afterwards, so the first paint never waits for them.
 export default function Landing() {
   const voiceStage = useVoiceStage();
-  const signupOpen = useSignupOpen();
 
   return (
     <div className="lp" data-stage={voiceStage.status}>
@@ -72,14 +70,12 @@ export default function Landing() {
             </span>
           </Link>
           <nav aria-label="Подвал">
-            <Link to="/signin" transition>
-              Войти
+            <Link to="/app/dashboard" transition>
+              Консоль
             </Link>
-            {signupOpen && (
-              <Link to="/signup" transition>
-                Регистрация
-              </Link>
-            )}
+            <Link to="/app/settings" transition>
+              Настройки
+            </Link>
           </nav>
         </div>
       </footer>

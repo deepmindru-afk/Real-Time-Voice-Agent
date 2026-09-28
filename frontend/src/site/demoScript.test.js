@@ -20,18 +20,18 @@ test("the script has the demo's exact lines, in order", () => {
   const said = DEMO_SCRIPT.filter((step) => step.text).map((step) => step.text);
 
   assert.deepEqual(said.slice(0, 4), [
-    "Hi, I need to schedule my appointment.",
-    "Sure. What day works for you?",
-    "Tomorrow afternoon.",
-    "I found a 3 PM slot. Would you like me to book it?",
+    "Здравствуйте, мне нужно перенести приём.",
+    "Конечно. Какой день вам удобен?",
+    "Завтра во второй половине дня.",
+    "Нашёл окно на 15:00. Записать вас?",
   ]);
   assert.equal(DEMO_SCRIPT.at(-1).who, "done");
 });
 
 test("the agent asks before it books (an action never precedes its confirmation)", () => {
   const bookAt = DEMO_SCRIPT.findIndex((step) => step.detail?.startsWith("book_slot"));
-  const askedAt = DEMO_SCRIPT.findIndex((step) => step.text?.includes("Would you like me to book it"));
-  const yesAt = DEMO_SCRIPT.findIndex((step) => step.text === "Yes, please.");
+  const askedAt = DEMO_SCRIPT.findIndex((step) => step.text?.includes("Записать вас?"));
+  const yesAt = DEMO_SCRIPT.findIndex((step) => step.text === "Да, пожалуйста.");
 
   assert.ok(askedAt < yesAt && yesAt < bookAt);
 });
@@ -89,19 +89,20 @@ test("time going backwards (a replay) shows fewer items again", () => {
 });
 
 test("partialText: the caller's words arrive by whole words", () => {
-  const step = { who: "user", text: "Hi, I need to schedule my appointment." };
+  const step = { who: "user", text: "Здравствуйте, мне нужно перенести приём." };
 
   assert.equal(partialText(step, 0), "");
   assert.equal(partialText(step, 1), step.text);
-  assert.equal(partialText(step, 0.01), "Hi,"); // never empty once started
-  assert.ok(partialText(step, 0.5).split(" ").length < 7);
+  assert.equal(partialText(step, 0.01), "Здравствуйте,"); // never empty once started
+  assert.ok(partialText(step, 0.5).split(" ").length < 6);
   assert.ok(step.text.startsWith(partialText(step, 0.5)));
 });
 
 test("partialText: the agent types by characters", () => {
-  const step = { who: "agent", text: "Sure. What day works for you?" };
+  const step = { who: "agent", text: "Конечно. Какой день вам удобен?" };
 
-  assert.equal(partialText(step, 0.5), step.text.slice(0, 15));
+  // The agent types by characters, so half the line is half its length.
+  assert.equal(partialText(step, 0.5), step.text.slice(0, Math.ceil(step.text.length / 2)));
   assert.equal(partialText(step, 1), step.text);
   assert.equal(partialText(step, 2), step.text);
 });

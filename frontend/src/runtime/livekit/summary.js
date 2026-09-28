@@ -20,7 +20,7 @@ const plural = (count, one, few, many) => {
 
 const ROLES = { You: "оператор", Agent: "голосовой агент" };
 
-export function buildTranscriptSummary({ callId = null, startedAt = 0, durationSeconds = 0, transcript = [], tools = [] } = {}) {
+export function buildTranscriptSummary({ startedAt = 0, durationSeconds = 0, transcript = [], tools = [] } = {}) {
   const userTurns = transcript.filter((entry) => entry.speaker === "You");
   const agentTurns = transcript.filter((entry) => entry.speaker === "Agent");
 
@@ -39,7 +39,7 @@ export function buildTranscriptSummary({ callId = null, startedAt = 0, durationS
     : ["Вопросов не поступило"];
 
   return {
-    callId: callId ?? `LK-${startedAt}`,
+    callId: `ЗВОНОК-${new Date(startedAt || Date.now()).toISOString().slice(0, 19).replace(/[T:]/g, "-")}`,
     startedAt,
     durationSeconds,
     profileId: null,

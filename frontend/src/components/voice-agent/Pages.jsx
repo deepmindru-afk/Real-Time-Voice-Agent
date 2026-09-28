@@ -16,34 +16,60 @@ export function SectionPlaceholder({ icon, title, description }) {
   );
 }
 
-export function ProfilePage({ user }) {
+// There is no account to show, because there is no sign-in. What the operator does have
+// is the two pieces of configuration that decide what happens on the next call, and
+// showing them here is more useful than an invented profile.
+export function ProfilePage({ connection, agent }) {
+  const blank = "—";
+
   return (
     <section className="page-card">
-      <h2>Профиль</h2>
+      <h2>Подключение</h2>
 
       <dl className="page-facts">
         <div>
-          <dt>Почта</dt>
-          <dd>{user?.email ?? "Вы не вошли (офлайн-режим)"}</dd>
+          <dt>Адрес LiveKit</dt>
+          <dd>{connection?.url || "возвращается эндпоинтом токенов"}</dd>
         </div>
-        {user?.role && (
-          <div>
-            <dt>Роль</dt>
-            <dd>{user.role[0].toUpperCase() + user.role.slice(1)}</dd>
-          </div>
-        )}
-        {user?.organization_id != null && (
-          <div>
-            <dt>ID организации</dt>
-            <dd>{user.organization_id}</dd>
-          </div>
-        )}
+        <div>
+          <dt>Эндпоинт токенов</dt>
+          <dd>{connection?.tokenEndpoint || blank}</dd>
+        </div>
+        <div>
+          <dt>Ваше имя в звонке</dt>
+          <dd>{connection?.participantName || "Оператор"}</dd>
+        </div>
+        <div>
+          <dt>Хранение данных</dt>
+          <dd>Только этот браузер</dd>
+        </div>
+      </dl>
+
+      <h2 style={{ marginTop: 24 }}>Агент</h2>
+
+      <dl className="page-facts">
+        <div>
+          <dt>Название</dt>
+          <dd>{agent?.agentName || "не описан"}</dd>
+        </div>
+        <div>
+          <dt>Роль</dt>
+          <dd>{agent?.role || blank}</dd>
+        </div>
+        <div>
+          <dt>Отрасль</dt>
+          <dd>{agent?.industry || blank}</dd>
+        </div>
+        <div>
+          <dt>Назначение</dt>
+          <dd>{agent?.purpose || blank}</dd>
+        </div>
       </dl>
     </section>
   );
 }
 
-export function SettingsPage({ theme, onThemeChange, onConfigure, configLocked }) {
+export function SettingsPage({ theme, onThemeChange, onConfigure, configLocked, onOpenConnection }) {
   return (
     <section className="page-card">
       <h2>Настройки</h2>
@@ -69,11 +95,21 @@ export function SettingsPage({ theme, onThemeChange, onConfigure, configLocked }
       </fieldset>
 
       <div className="page-setting">
+        <h3>Подключение</h3>
+        <p>Эндпоинт токенов LiveKit, имя агента и комнаты задаются в панели подключения.</p>
+
+        <button type="button" className="config-open" onClick={onOpenConnection}>
+          Открыть подключение
+          <Icon name="arrowRight" size={16} />
+        </button>
+      </div>
+
+      <div className="page-setting">
         <h3>Агент</h3>
-        <p>Задачи голосового агента задаются в разделе «Сценарий применения и настройка агента».</p>
+        <p>Что агент делает, придя на линию, — это метаданные подключения, а не его настройка.</p>
 
         <button type="button" className="config-open" disabled={configLocked} onClick={onConfigure}>
-          Открыть настройку
+          Описать агента
           <Icon name="arrowRight" size={16} />
         </button>
       </div>

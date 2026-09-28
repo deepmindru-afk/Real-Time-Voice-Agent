@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import AgentResponse from "./AgentResponse";
 import CallVisualizer from "../voice/CallVisualizer";
-import { declineJob, fetchRing } from "../../runtime/transports.js";
 import { formatTime } from "../../runtime/format.js";
+import { loadConnection } from "../../runtime/livekit/connection.js";
 import { VOICE_STATE_LABEL, visualForCallState } from "../../runtime/voiceState.js";
-import { voiceSupport } from "../../runtime/useVoice.js";
 import { useVoiceAgent } from "../../runtime/useVoiceAgent.js";
 
 const STATE_TEXT = {
@@ -14,50 +13,29 @@ const STATE_TEXT = {
   processing: "Думаю...",
 };
 
-// What the person being called sees. They open the link they were sent, the
-// "phone" rings, and they answer or decline. This is the seam a telephony
-// provider will later replace: the server side of the call does not change.
-export default function CalleeApp({ jobId, token }) {
-  const [ring, setRing] = useState({ state: "loading" }); // loading | ringing | unavailable | declined
+// What a person on a phone browser sees when they open a call link.
+//
+// There is no incoming-call record to look up and nobody to ring. The endpoint mints a
+// fresh room and a fresh agent for every grant, so the link carries no room at all - it
+// only names the person, and answering means asking for a grant and joining whatever room
+// that grant opens. The "answer/decline" step is gone; the call it was wrapping is not.
+//
+// The connection is read from this browser, so a link only works for someone who has
+// already opened the console once and had a token endpoint configured. That is the honest
+// shape of a frontend with no server of its own: there is nowhere else to read it from.
+export default function CalleeApp({ name }) {
   const [draft, setDraft] = useState("");
 
-  const profile = useMemo(() => ({ id: ring.profile_id }), [ring.profile_id]);
-  const attach = useMemo(() => ({ jobId, token }), [jobId, token]);
-  const agent = useVoiceAgent(profile, { attach });
+  const connection = useMemo(() => loadConnection(), []);
+  const callerName = (name ?? "").trim() || "Клиент";
+  const agent = useVoiceAgent({ connection, participantName: callerName });
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", localStorage.getItem("voice-agent-theme") || "dark");
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    fetchRing(jobId, token)
-      .then((info) => {
-        if (!cancelled) {
-          setRing(info.status === "ringing" ? { state: "ringing", ...info } : { state: "unavailable", ...info });
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setRing({ state: "unavailable" });
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [jobId, token]);
-
-  const decline = async () => {
-    try {
-      await declineJob(jobId, token);
-    } catch {
-      // Already gone: nothing more to decline.
-    }
-
-    setRing((current) => ({ ...current, state: "declined" }));
-  };
-
   const inCall = agent.callState !== "idle" && agent.callState !== "ended";
+  const label = STATE_TEXT[agent.callState] ?? VOICE_STATE_LABEL[agent.callState];
 
   const submit = (event) => {
     event.preventDefault();
@@ -67,16 +45,15 @@ export default function CalleeApp({ jobId, token }) {
 
   let body;
 
-  if (ring.state === "loading") {
-    body = <div className="state-block is-loading">Проверяем этот звонок...</div>;
-  } else if (ring.state === "declined") {
-    body = <div className="state-block">Вы отклонили звонок. Можете закрыть эту страницу.</div>;
-  } else if (agent.callState === "ended") {
+  if (!agent.engine.ok) {
     body = (
       <div className="state-block">
-        {agent.callError ?? "Звонок завершён. Спасибо. Можете закрыть эту страницу."}
+        <p>{agent.engine.note}</p>
+        <p>Подключение настраивается в консоли на компьютере, в разделе «Подключение к LiveKit».</p>
       </div>
     );
+  } else if (agent.callState === "ended") {
+    body = <div className="state-block">{agent.callError ?? "Звонок завершён. Спасибо. Можете закрыть эту страницу."}</div>;
   } else if (inCall) {
     body = (
       <>
@@ -84,7 +61,7 @@ export default function CalleeApp({ jobId, token }) {
           <CallVisualizer
             state={visualForCallState(agent.callState, Boolean(agent.callError))}
             orbIcon="microphone"
-            statusLabel={STATE_TEXT[agent.callState] ?? VOICE_STATE_LABEL[agent.callState]}
+            statusLabel={label}
             size="lg"
           />
         </div>
@@ -106,12 +83,6 @@ export default function CalleeApp({ jobId, token }) {
 
         {agent.voice.micState === "blocked" && (
           <p className="voice-notice">Доступ к микрофону заблокирован. Вы можете вводить ответы ниже.</p>
-        )}
-        {!voiceSupport.recognition && !agent.voice.livekit && (
-          <p className="voice-notice">
-            Этот браузер не слышит вас (используйте Chrome или Edge). В режиме LiveKit распознавание выполняет агент.
-            Вы можете вводить ответы ниже.
-          </p>
         )}
 
         <div className="callee-transcript">
@@ -143,39 +114,24 @@ export default function CalleeApp({ jobId, token }) {
         </button>
       </>
     );
-  } else if (ring.state === "ringing") {
+  } else {
     body = (
       <>
         <div className="callee-orb">
-          <CallVisualizer
-            state="connecting"
-            orbIcon="phone"
-            statusLabel="Входящий звонок"
-            size="lg"
-            showWaveform={false}
-          />
+          <CallVisualizer state="idle" orbIcon="phone" statusLabel="Готовы принять звонок" size="lg" showWaveform={false} />
         </div>
 
         <p className="callee-note">
-          <strong>{ring.organisation ?? "АО «Портал»"}</strong> звонит вам. Это голосовой ИИ-ассистент, и
-          разговор сохраняется в виде расшифровки.
+          <strong>АО «Портал»</strong> приглашает {callerName} на разговор с голосовым ИИ-агентом. Комната
+          создаётся специально для этого звонка, а разговор сохраняется в виде расшифровки.
         </p>
 
         <div className="callee-buttons">
           <button className="callee-answer" onClick={agent.beginCall}>
             Ответить
           </button>
-          <button className="callee-decline" onClick={decline}>
-            Отклонить
-          </button>
         </div>
       </>
-    );
-  } else {
-    body = (
-      <div className="state-block">
-        Этот звонок больше недоступен. Возможно, на него уже ответили, отклонили или он истёк.
-      </div>
     );
   }
 

@@ -1,6 +1,4 @@
 import { lazy, Suspense } from "react";
-import AppGate from "./auth/AppGate.jsx";
-import AuthProvider from "./auth/AuthProvider.jsx";
 import NotFound from "./components/NotFound.jsx";
 import Splash from "./components/Splash.jsx";
 import { useRouter } from "./router/context.js";
@@ -8,34 +6,22 @@ import RouterProvider from "./router/RouterProvider.jsx";
 import { isAppRoute } from "./router/router.js";
 
 const Landing = lazy(() => import("./site/Landing.jsx"));
-const SignIn = lazy(() => import("./site/SignIn.jsx"));
-const SignUp = lazy(() => import("./site/SignUp.jsx"));
 const OperatorConsole = lazy(() => import("./app/OperatorConsole.jsx"));
 const CalleeRoute = lazy(() => import("./app/CalleeRoute.jsx"));
 
-// Every URL lands on something: a screen, the sign-in redirect, the retry screen, or "not found".
-// Nothing falls through to a loading mark.
+// Every URL lands on something: the console, the call screen, the site, or "not found".
+// Nothing falls through to a loading mark, and there is no sign-in to get past.
 function Screen() {
   const { route, search } = useRouter();
 
-  // A link like /?job=JOB-...&token=... is a phone call for someone: the incoming-call screen,
-  // whatever else the app is doing.
-  const jobId = search.get("job");
-  const token = search.get("token");
-
-  if (jobId && token) return <CalleeRoute jobId={jobId} token={token} />;
+  // A link like /?call=1&name=... is a person joining a call: the incoming-call screen,
+  // whatever else the app is doing. The room comes from the grant, not from the URL, so
+  // the link only has to say that a call is wanted and who is calling.
+  if (search.get("call")) return <CalleeRoute name={search.get("name")} />;
 
   if (route === "landing") return <Landing />;
-  if (route === "signin") return <SignIn />;
-  if (route === "signup") return <SignUp />;
 
-  if (isAppRoute(route)) {
-    return (
-      <AppGate>
-        <OperatorConsole />
-      </AppGate>
-    );
-  }
+  if (isAppRoute(route)) return <OperatorConsole />;
 
   return <NotFound />;
 }
@@ -43,11 +29,9 @@ function Screen() {
 export default function App() {
   return (
     <RouterProvider>
-      <AuthProvider>
-        <Suspense fallback={<Splash />}>
-          <Screen />
-        </Suspense>
-      </AuthProvider>
+      <Suspense fallback={<Splash />}>
+        <Screen />
+      </Suspense>
     </RouterProvider>
   );
 }
