@@ -23,7 +23,7 @@ RUN uv pip install -U --no-cache-dir --pre --prerelease allow -r requirements.tx
 COPY . .
 #RUN python koleso_rt_agent.py download-files
 #RUN python -m livekit.agents download-files
-ENTRYPOINT ["python", "main.py"]
+ENTRYPOINT ["python", "app/main.py"]
 
 #FROM python:slim
 ##ARG PYTHON_VERSION=3.14 #.7
