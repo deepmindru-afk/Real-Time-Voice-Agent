@@ -1,0 +1,40 @@
+# Build context for the backend image is this directory. What belongs in the image is the
+# application, its runtime requirements and the Alembic migration history; everything below is
+# something that would only be dead weight or a leak.
+
+# Secrets and local databases. .env.example stays: it documents the variables and holds no values.
+.env
+.env.*
+!.env.example
+*.db
+
+# Version control and local environments
+.git/
+.venv/
+venv/
+
+# Byte-code and tooling caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Test and coverage output
+tests/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Development-only requirements, on purpose: see requirements.txt's closing note. The server installs
+# neither, and requirements-pipecat.txt is an optional extra (VOICE_RUNTIME) an operator adds.
+
+requirements-dev.txt
+requirements-pipecat.txt
+
+# alembic/ and alembic.ini are deliberately NOT excluded: alembic must stay runnable from /app, since
+# alembic.ini resolves its paths against %(here)s.
