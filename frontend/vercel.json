@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https:/:rtag.portalos.ru/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://rtag.portalos.ru/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
