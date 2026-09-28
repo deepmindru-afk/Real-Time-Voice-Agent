@@ -102,7 +102,7 @@
   border: 1px solid var(--lp-line-2);
   border-radius: 28px;
   background:
-    linear-gradient(180deg, rgba(20, 32, 32, 0.9), rgba(9, 15, 15, 0.94)),
+    linear-gradient(180deg, rgba(30, 20, 66, 0.9), rgba(11, 7, 28, 0.94)),
     var(--lp-surface);
   box-shadow: 0 30px 80px -40px rgba(0, 0, 0, 0.9);
   transform-style: preserve-3d;
@@ -157,7 +157,7 @@
 
 .uc:hover .uc-icon {
   background: var(--lp-accent);
-  color: #03110d;
+  color: #120a2e;
   border-color: var(--lp-accent);
 }
 
@@ -420,7 +420,7 @@
 
 @keyframes tick {
   0%, 12% { background: none; color: transparent; border-color: var(--lp-line-2); }
-  22%, 88% { background: var(--lp-accent); color: #03110d; border-color: var(--lp-accent); }
+  22%, 88% { background: var(--lp-accent); color: #120a2e; border-color: var(--lp-accent); }
   100% { background: none; color: transparent; }
 }
 

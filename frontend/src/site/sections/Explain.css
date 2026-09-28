@@ -102,7 +102,7 @@
 }
 
 .flow li.is-current .flow-icon {
-  color: #03110d;
+  color: #120a2e;
   background: var(--lp-accent);
   border-color: var(--lp-accent);
   box-shadow: 0 0 0 8px rgba(var(--brand-rgb), 0.16), 0 0 32px rgba(var(--brand-rgb), 0.7);

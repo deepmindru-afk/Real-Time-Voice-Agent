@@ -26,6 +26,7 @@ import {
   WebGLRenderer,
 } from "three";
 import { TIER_SETTINGS } from "../hooks/tier.js";
+import { currentMode } from "./bus.js";
 import { rmsOfBytes, targetsFor } from "./mode.js";
 import {
   CORE_FRAGMENT,
@@ -42,10 +43,10 @@ export const VISIBLE_HEIGHT = 2 * Math.tan((FOV * Math.PI) / 360) * CAMERA_Z;
 const SLOW_FRAME = 1 / 27; // seconds; sustained slower than this means "degrade"
 const SLOW_FRAMES_BEFORE_DEGRADE = 50;
 
-const ACCENT = new Color("#52ab98");
-const BRIGHT = new Color("#86d6c2");
-const DEEP = new Color("#020808");
-const MID = new Color("#0a2f2b");
+const ACCENT = new Color("#7c5cff"); // violet
+const BRIGHT = new Color("#ffb3ec"); // pink
+const DEEP = new Color("#050310");
+const MID = new Color("#1a1148");
 
 // Deterministic pseudo-random numbers: the same particle field every load, no Math.random.
 function mulberry32(seed) {
@@ -157,7 +158,7 @@ export function createScene({ canvas, tier, stage, onGiveUp }) {
     uLevel: coreUniforms.uLevel,
     uThink: coreUniforms.uThink,
     uPixel: { value: pixelRatio },
-    uColor: { value: new Color("#a7e6d6") },
+    uColor: { value: new Color("#e3b8ff") },
     uOpacity: coreUniforms.uOpacity,
   };
   const dust = new Points(
@@ -206,8 +207,9 @@ export function createScene({ canvas, tier, stage, onGiveUp }) {
     last = time;
     clock += dt;
 
-    // Mode -> energy. A live microphone, when the visitor chose it, overrides the script.
-    let { energy, think: thinkTarget } = targetsFor(stage.mode, clock);
+    // Mode -> energy. A real call on the page outranks the script, and a live microphone, when
+    // the visitor chose it, outranks both: whatever is closest to a real voice.
+    let { energy, think: thinkTarget } = targetsFor(currentMode(stage), clock);
 
     if (stage.analyser) {
       sampleBuffer ??= new Uint8Array(stage.analyser.fftSize);

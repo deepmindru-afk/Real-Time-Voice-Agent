@@ -2,47 +2,55 @@
    REAL-TIME VOICE AGENT
    VOICE AGENT CONSOLE
    Light + Dark Theme
-   Palette: soft neutrals with the teal brand accent (#52AB98)
+   Palette: soft neutrals with the violet brand accent (#7C5CFF)
    ========================================================= */
 
 
 /* =========================================================
    THEME VARIABLES
-   Soft neutrals with one accent, the brand teal #52AB98. It fills the
-   primary action and marks active/live state; text on it is always
-   near-black (--on-primary). Everything else stays neutral. Red is kept
-   for errors and blocked states.
+   Soft neutrals with one accent, the brand violet #7C5CFF, and a ramp
+   (violet, purple, indigo, pink, rose) for the states that need a
+   neighbouring step. It fills the primary action and marks active/live
+   state; text on it is always near-black (--on-primary). Everything else
+   stays neutral, tinted with the same violet. Red is kept for errors and
+   blocked states.
    ========================================================= */
 
 :root {
   color-scheme: light;
 
-  --primary: #52ab98;
-  --primary-dark: #2b6d5e; /* the accent as text on a light surface */
-  --primary-hover: #469684;
-  --primary-light: #d7eee8;
-  --primary-soft: #edf7f4;
-  --on-primary: #04130f;
-  --focus: #2b6d5e;
+  --primary: #7c5cff;
+  --primary-dark: #5b3fd6; /* the accent as text on a light surface */
+  --primary-hover: #6a48ff;
+  --primary-light: #e7e0ff;
+  --primary-soft: #f4f0ff;
+  --on-primary: #0d0722;
+  --focus: #5b3fd6;
 
-  --text: #0b1210;
-  --text-secondary: #2f3a37;
-  --muted: #64716d;
+  /* the rest of the ramp, for a state that should sit beside the accent */
+  --purple: #a855f7;
+  --indigo: #4b62ff;
+  --pink: #ff6fd8;
+  --rose: #f0397f;
 
-  --border: #e0e7e4;
-  --border-strong: #c9d4d0;
+  --text: #100c22;
+  --text-secondary: #39315a;
+  --muted: #6b6288;
 
-  --background: #f3f6f5;
+  --border: #e4dff5;
+  --border-strong: #cdc4ec;
+
+  --background: #f6f4fd;
   --panel: #ffffff;
-  --surface: #f8faf9;
+  --surface: #faf8ff;
 
-  --input-bg: #f3f6f5;
-  --transcript-bg: #f8faf9;
-  --summary-box-bg: #f3f6f5;
+  --input-bg: #f6f4fd;
+  --transcript-bg: #faf8ff;
+  --summary-box-bg: #f6f4fd;
 
-  --danger: #d6303f;
-  --danger-bg: #fff2f3;
-  --danger-border: #f3c8cd;
+  --danger: #d81b60;
+  --danger-bg: #fff0f6;
+  --danger-border: #f6c2d5;
 
   /* Success and warning are semantic states, kept apart from the yellow brand
      accent: ok = green, caution = amber, only errors stay red. */
@@ -54,9 +62,9 @@
   --warning-bg: #fdf5e0;
   --warning-border: #ecd9a6;
 
-  --shadow: 0 1px 3px rgba(10, 10, 10, 0.06);
-  --shadow-raised: 0 1px 2px rgba(10, 10, 10, 0.05), 0 8px 24px rgba(10, 10, 10, 0.08);
-  --shadow-glow: 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent), 0 10px 44px color-mix(in srgb, var(--primary) 26%, transparent);
+  --shadow: 0 1px 3px rgba(24, 12, 48, 0.06);
+  --shadow-raised: 0 1px 2px rgba(24, 12, 48, 0.05), 0 8px 24px rgba(24, 12, 48, 0.08);
+  --shadow-glow: 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent), 0 10px 44px color-mix(in srgb, var(--pink) 26%, transparent);
 
   --radius-sm: 8px;
   --radius: 12px;
@@ -74,9 +82,9 @@
   --transition: 0.2s ease;
 
   /* Atmospheric background layers (see .voice-app / .callee-page). */
-  --bg-glow-a: rgba(82, 171, 152, 0.13);
-  --bg-glow-b: rgba(82, 171, 152, 0.07);
-  --bg-grid: rgba(10, 18, 16, 0.03);
+  --bg-glow-a: rgba(124, 92, 255, 0.14);
+  --bg-glow-b: rgba(255, 111, 216, 0.08);
+  --bg-grid: rgba(28, 14, 60, 0.03);
 
   /* Design-system aliases: the same tokens under the standard names, so any
      new surface can stay consistent without scattering colors through JSX. */
@@ -101,32 +109,37 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
-  --primary: #52ab98;
-  --primary-dark: #86d6c2; /* the accent as text on a dark surface */
-  --primary-hover: #66bca9;
+  --primary: #8b6bff;
+  --primary-dark: #ffb3ec; /* the accent as text on a dark surface */
+  --primary-hover: #9d82ff;
 
-  --primary-light: #0f2a25;
-  --primary-soft: #0b1a17;
-  --focus: #86d6c2;
+  --primary-light: #241a4d;
+  --primary-soft: #170f36;
+  --focus: #ffb3ec;
 
-  --text: #eef5f3;
-  --text-secondary: #cbd8d4;
-  --muted: #8a9b96;
+  --purple: #b47cff;
+  --indigo: #6f83ff;
+  --pink: #ff6fd8;
+  --rose: #ff5c96;
 
-  --border: #1c2624;
-  --border-strong: #2c3936;
+  --text: #f3eeff;
+  --text-secondary: #cfc4ee;
+  --muted: #948ab8;
 
-  --background: #070b0a;
-  --panel: #0d1312;
-  --surface: #0a0f0e;
+  --border: #241a45;
+  --border-strong: #372a63;
 
-  --input-bg: #131b19;
-  --transcript-bg: #0a0f0e;
-  --summary-box-bg: #131b19;
+  --background: #080614;
+  --panel: #0e0a20;
+  --surface: #0b0820;
 
-  --danger: #f07b86;
-  --danger-bg: #2a1315;
-  --danger-border: #5a2a2e;
+  --input-bg: #171034;
+  --transcript-bg: #0b0820;
+  --summary-box-bg: #171034;
+
+  --danger: #ff6b9d;
+  --danger-bg: #2e0a1c;
+  --danger-border: #63204a;
 
   --success: #58d68a;
   --success-bg: #0f2a1a;
@@ -138,12 +151,12 @@
 
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-raised: 0 2px 4px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.55);
-  --shadow-glow: 0 0 0 1px color-mix(in srgb, var(--primary) 14%, transparent), 0 12px 52px color-mix(in srgb, var(--primary) 18%, transparent);
+  --shadow-glow: 0 0 0 1px color-mix(in srgb, var(--primary) 14%, transparent), 0 12px 52px color-mix(in srgb, var(--pink) 18%, transparent);
 
   --panel-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
-  --bg-glow-a: rgba(82, 171, 152, 0.09);
-  --bg-glow-b: rgba(82, 171, 152, 0.05);
+  --bg-glow-a: rgba(124, 92, 255, 0.14);
+  --bg-glow-b: rgba(255, 111, 216, 0.08);
   --bg-grid: rgba(255, 255, 255, 0.022);
 }
 
@@ -4137,7 +4150,8 @@ textarea:focus-visible,
 
   border-radius: 999px;
 
-  background: var(--primary);
+  /* the ramp, on its side: the bars run from violet at the foot to pink at the tip */
+  background: linear-gradient(180deg, var(--pink), var(--primary));
 
   transform: scaleY(0.2);
   transform-origin: center;
@@ -4217,6 +4231,9 @@ textarea:focus-visible,
 }
 
 .wave-thinking .waveform-bar {
+  /* a step along the ramp while it works, not the same violet as listening */
+  background: linear-gradient(180deg, var(--purple), var(--indigo));
+
   opacity: 0.7;
 
   animation: wave-thinking 3s ease-in-out infinite;
@@ -4225,6 +4242,9 @@ textarea:focus-visible,
 }
 
 .wave-speaking .waveform-bar {
+  /* and the far end of it when it answers */
+  background: linear-gradient(180deg, var(--pink), var(--rose));
+
   animation: wave-speaking 1.25s ease-in-out infinite;
 
   animation-delay: calc(var(--i) * -0.11s);

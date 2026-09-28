@@ -91,7 +91,7 @@
   height: clamp(540px, 74vh, 660px);
   border: 1px solid var(--lp-line-2);
   border-radius: 26px;
-  background: linear-gradient(180deg, rgba(16, 27, 27, 0.86), rgba(9, 15, 15, 0.92));
+  background: linear-gradient(180deg, rgba(24, 16, 54, 0.86), rgba(11, 7, 28, 0.92));
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   box-shadow: 0 40px 120px -40px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
@@ -343,7 +343,7 @@
   height: 44px;
   border-radius: 50%;
   background: var(--lp-accent);
-  color: #03110d;
+  color: #120a2e;
 }
 
 .msg-check path {

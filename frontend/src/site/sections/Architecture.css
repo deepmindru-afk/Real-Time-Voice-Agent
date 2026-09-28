@@ -78,7 +78,7 @@
   border-radius: 50%;
   border: 1px solid color-mix(in srgb, var(--lp-accent) calc(var(--g) * 100%), var(--lp-line-2));
   background: color-mix(in srgb, var(--lp-accent) calc(var(--g) * 100%), var(--lp-bg));
-  color: color-mix(in srgb, #03110d calc(var(--g) * 100%), var(--lp-muted));
+  color: color-mix(in srgb, #120a2e calc(var(--g) * 100%), var(--lp-muted));
   box-shadow: 0 0 calc(var(--g) * 34px) rgba(var(--brand-rgb), calc(var(--g) * 0.9));
 }
 

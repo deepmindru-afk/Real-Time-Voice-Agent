@@ -66,7 +66,7 @@ function WaveCanvas({ mode, interrupted, active }) {
           else context.lineTo(x, y);
         }
 
-        context.strokeStyle = ribbon === 0 ? "rgba(134, 214, 194, 0.9)" : `rgba(82, 171, 152, ${0.5 - ribbon * 0.15})`;
+        context.strokeStyle = ribbon === 0 ? "rgba(255, 179, 236, 0.9)" : `rgba(124, 92, 255, ${0.5 - ribbon * 0.15})`;
         context.lineWidth = ribbon === 0 ? 1.6 : 1.1;
         context.stroke();
       }

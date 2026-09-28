@@ -50,7 +50,7 @@ float snoise(vec3 v){
 `;
 
 // The core: a sphere whose surface breathes with noise, faster and deeper as the voice gets
-// louder. Dark glass inside, a teal rim where it meets the light.
+// louder. Dark glass inside, a pink rim where it meets the light.
 export const CORE_VERTEX = /* glsl */ `
 ${NOISE}
 uniform float uTime;
@@ -117,7 +117,7 @@ void main(){
   col += uBright * pow(fres, 3.2) * 0.85;
 
   vec3 h = normalize(l + v);
-  col += vec3(0.85, 1.0, 0.96) * pow(clamp(dot(n, h), 0.0, 1.0), 120.0) * 0.22;
+  col += vec3(1.0, 0.88, 0.98) * pow(clamp(dot(n, h), 0.0, 1.0), 120.0) * 0.22;
 
   // faint contour lines: the surface reads as sound, not plastic
   float lines = smoothstep(0.93, 1.0, sin(vPos.y * 24.0 + vDisp * 9.0 - uTime * 1.1) * 0.5 + 0.5);

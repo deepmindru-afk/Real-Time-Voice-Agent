@@ -1,12 +1,29 @@
 /* Brand tokens shared by the public site and the application.
-   The accent is #52AB98. It is used for state and emphasis (active, live, done, the primary
-   action), never as a general fill: surfaces stay neutral. */
+
+   The accent is violet (#7C5CFF), and the whole interface is built from one ramp: violet,
+   purple, indigo (the blue end), pink and rose (the red end). A state is a step along that
+   ramp rather than a colour of its own, so the product reads as one thing.
+
+   The accent marks state and emphasis (active, live, done, the primary action), never as a
+   general fill: surfaces stay neutral, tinted with the same violet. */
 
 :root {
-  --brand: #52ab98;
-  --brand-hi: #86d6c2; /* the accent on dark surfaces: text, rims, waveforms */
-  --brand-lo: #2b6d5e; /* the accent as text on light surfaces */
-  --brand-rgb: 82, 171, 152;
+  --brand: #7c5cff;
+  --brand-hi: #ffb3ec; /* the accent on dark surfaces: text, rims, waveforms */
+  --brand-lo: #5b3fd6; /* the accent as text on light surfaces */
+  --brand-rgb: 124, 92, 255;
+
+  /* the ramp itself, for the places that want a neighbouring step */
+  --violet: #7c5cff;
+  --violet-rgb: 124, 92, 255;
+  --purple: #a855f7;
+  --purple-rgb: 168, 85, 247;
+  --indigo: #4b62ff;
+  --indigo-rgb: 75, 98, 255;
+  --pink: #ff6fd8;
+  --pink-rgb: 255, 111, 216;
+  --rose: #f0397f;
+  --rose-rgb: 240, 57, 127;
 
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
