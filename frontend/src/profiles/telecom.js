@@ -1,73 +1,74 @@
-import { listSentence, makeGreeting, rupees } from "./shared.js";
+import { listSentence, makeGreeting, rubles } from "./shared.js";
 
 const PLANS = {
-  "Postpaid 599": { price: 599, data: "60 GB", extras: "unlimited calls" },
-  "Postpaid 799": { price: 799, data: "120 GB", extras: "unlimited calls and a streaming bundle" },
-  "Postpaid 999": { price: 999, data: "250 GB", extras: "unlimited calls, a streaming bundle and international roaming" },
+  "Безлимит 599": { price: 599, data: "60 ГБ", extras: "безлимитные звонки" },
+  "Безлимит 799": { price: 799, data: "120 ГБ", extras: "безлимитные звонки и пакет стриминга" },
+  "Безлимит 999": { price: 999, data: "250 ГБ", extras: "безлимитные звонки, пакет стриминга и роуминг" },
 };
 
+// The plan is named by its price, so the price is what has to be heard.
 function requestedPlan(text) {
   const match = text.match(/\b(799|999)\b/);
 
-  return match ? `Postpaid ${match[1]}` : null;
+  return match ? `Безлимит ${match[1]}` : null;
 }
 
 export default {
   id: "telecom",
-  name: "Telecom Support",
-  vertical: "Telecom",
-  workspaceLabel: "Telecom Support Workspace",
-  counterparty: "subscriber",
+  name: "Поддержка связи",
+  vertical: "Телеком",
+  workspaceLabel: "Рабочее пространство поддержки связи",
+  counterparty: "абонента",
 
-  headline: "How can I help with your plan?",
+  headline: "Чем могу помочь по вашему тарифу?",
   description:
-    "Speak naturally with the AI voice agent about your usage, bill, plan renewal or an upgrade.",
+    "Обсудите с голосовым ИИ-агентом расход трафика, счёт, продление тарифа или его смену.",
 
   greeting: makeGreeting(
-    "I'm the virtual assistant for Vertex Mobile, speaking with Meera Iyer.",
-    "I can help with your data usage, your bill, plan renewal, or an upgrade. What can I do for you?"
+    "Я голосовой ассистент службы поддержки связи АО «Портал», говорю с Меерой Айер.",
+    "Я могу помочь с расходом трафика, счётом, продлением тарифа или его сменой. Чем помочь?"
   ),
 
   prompts: [
-    "How much data have I used?",
-    "What's my current bill?",
-    "When does my plan renew?",
-    "What plans are available?",
-    "Upgrade my plan",
+    "Сколько трафика израсходовано?",
+    "Какой у меня счёт?",
+    "Когда продление тарифа?",
+    "Какие тарифы доступны?",
+    "Сменить тариф",
   ],
 
   capabilities: [
-    "check your data usage",
-    "explain your bill",
-    "tell you when your plan renews",
-    "upgrade your plan",
+    "проверить расход трафика",
+    "объяснить счёт",
+    "сообщить дату продления",
+    "сменить тариф",
   ],
 
   nextSteps: [
-    "Pay the outstanding bill before the due date",
-    "Check the new plan benefits in the app",
-    "Review usage again before the next renewal",
+    "Оплатить текущий счёт до даты",
+    "Посмотреть новые условия в приложении",
+    "Проверить расход заново перед следующим продлением",
   ],
 
   data: {
-    subscriber: "Meera Iyer",
-    number: "ending 0210",
-    plan: "Postpaid 599",
-    usage: { usedGb: 42, limitGb: 60, resetsOn: "28 September 2026" },
-    bill: { amount: 599, dueDate: "25 September 2026", status: "unpaid" },
+    subscriber: "Меера Айер",
+    number: "на 0210",
+    plan: "Безлимит 599",
+    usage: { usedGb: 42, limitGb: 60, resetsOn: "28 сентября 2026" },
+    bill: { amount: 599, dueDate: "25 сентября 2026", status: "не оплачен" },
     plans: PLANS,
   },
 
   intents: [
     {
       id: "upgrade",
-      topic: "Plan upgrade",
-      match: /\b(upgrade|switch|change (?:my )?plan|move to)\b/i,
+      topic: "Смена тарифа",
+      match: /\b(смени\w*|поменя\w*|перейти\s+на|подключит\w*|другой\s+тариф|друго[йе]\s+тариф\w*)\b/i,
       propose: (data, text) => {
-        const plan = requestedPlan(text) ?? "Postpaid 799";
+        const plan = requestedPlan(text) ?? "Безлимит 799";
 
         if (plan === data.plan) {
-          return { reply: `You're already on ${plan}.` };
+          return { reply: `Вы уже на тарифе «${plan}».` };
         }
 
         return { tool: "upgrade_plan", args: { plan } };
@@ -75,71 +76,71 @@ export default {
     },
     {
       id: "plans",
-      topic: "Available plans",
+      topic: "Доступные тарифы",
       tool: "list_plans",
-      match: /\b(plans|options|available|offers)\b/i,
+      match: /\b(тариф\w*|варианты|доступн\w*|предложен\w*)\b/i,
       run: (data) => {
         const parts = Object.entries(data.plans).map(
-          ([name, plan]) => `${name} at ${rupees(plan.price)} with ${plan.data} and ${plan.extras}`
+          ([name, plan]) => `${name} за ${rubles(plan.price)} — ${plan.data} и ${plan.extras}`
         );
 
         return {
           args: {},
           result: data.plans,
-          reply: `The plans available are ${listSentence(parts)}. You're on ${data.plan}.`,
-          ref: "Plan catalogue",
+          reply: `Доступны тарифы: ${listSentence(parts)}. Сейчас у вас «${data.plan}».`,
+          ref: "Каталог тарифов",
         };
       },
     },
     {
       id: "usage",
-      topic: "Data usage",
+      topic: "Расход трафика",
       tool: "get_usage",
-      match: /\b(data|usage|used|left|remaining|gb)\b/i,
+      match: /\b(трафик\w*|интернет\w*|гб|гигабайт\w*|израсходова\w*|остал\w*)\b/i,
       run: (data) => {
         const { usedGb, limitGb, resetsOn } = data.usage;
 
         return {
           args: {},
           result: data.usage,
-          reply: `You've used ${usedGb} of your ${limitGb} GB, so ${limitGb - usedGb} GB is left. It resets on ${resetsOn}.`,
-          ref: `Number ${data.number}`,
+          reply: `Вы израсходовали ${usedGb} из ${limitGb} ГБ, осталось ${limitGb - usedGb} ГБ. Обновление пакета — ${resetsOn}.`,
+          ref: `Номер ${data.number}`,
         };
       },
     },
     {
       id: "bill",
-      topic: "Current bill",
+      topic: "Текущий счёт",
       tool: "get_bill",
-      match: /\b(bill|payment|pay|amount|charges)\b/i,
+      match: /\b(сч[её]т\w*|оплат\w*|плат[её]ж\w*|начислен\w*|сумм\w*)\b/i,
       run: (data) => ({
         args: {},
         result: data.bill,
-        reply: `Your current bill is ${rupees(data.bill.amount)}, due on ${data.bill.dueDate}. It is ${data.bill.status}.`,
-        ref: `Number ${data.number}`,
+        reply: `Ваш текущий счёт — ${rubles(data.bill.amount)}, оплатить его нужно до ${data.bill.dueDate}. Статус: ${data.bill.status}.`,
+        ref: `Номер ${data.number}`,
       }),
     },
     {
       id: "renewal",
-      topic: "Plan renewal",
+      topic: "Продление тарифа",
       tool: "get_plan",
-      match: /\b(renew|renewal|validity|expire|expiry|plan)\b/i,
+      match: /\b(продлен\w*|продлит\w*|срок\w*|действ\w*|тариф\w*)\b/i,
       run: (data) => ({
         args: {},
         result: { plan: data.plan, renews: data.usage.resetsOn },
-        reply: `You're on ${data.plan} at ${rupees(data.plans[data.plan].price)} a month. It renews on ${data.usage.resetsOn}.`,
-        ref: `Number ${data.number}`,
+        reply: `У вас тариф «${data.plan}» за ${rubles(data.plans[data.plan].price)} в месяц. Продление — ${data.usage.resetsOn}.`,
+        ref: `Номер ${data.number}`,
       }),
     },
   ],
 
   actions: {
     upgrade_plan: {
-      label: "Upgrade plan",
+      label: "Сменить тариф",
       describe: (args, data) => {
         const plan = data.plans[args.plan];
 
-        return `upgrade you from ${data.plan} to ${args.plan}, which is ${rupees(plan.price)} a month with ${plan.data}. The new price applies from your next bill`;
+        return `сменить ваш тариф «${data.plan}» на «${args.plan}» — ${rubles(plan.price)} в месяц с пакетом ${plan.data}. Новая цена действует со следующего счёта`;
       },
       execute: (args, data) => {
         const previous = data.plan;
@@ -148,9 +149,9 @@ export default {
 
         return {
           result: { previous_plan: previous, new_plan: args.plan },
-          summary: `Plan upgraded from ${previous} to ${args.plan}`,
-          reply: `Done. You're now on ${args.plan}. The new price applies from your next bill.`,
-          ref: `Number ${data.number}`,
+          summary: `Тариф изменён: ${previous} → ${args.plan}`,
+          reply: `Готово. Теперь у вас тариф «${args.plan}». Новая цена начнёт действовать со следующего счёта.`,
+          ref: `Номер ${data.number}`,
         };
       },
     },

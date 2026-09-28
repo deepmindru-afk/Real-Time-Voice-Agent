@@ -8,13 +8,13 @@ import "./Architecture.css";
 // track never ends: what the agent says becomes what the person hears becomes what it hears next.
 
 const NODES = [
-  { id: "user", icon: "user", label: "User", note: "Anyone with a phone or a browser.", x: 90, y: 290 },
-  { id: "mic", icon: "mic", label: "Microphone", note: "Their voice is captured on the phone line, or in the browser.", x: 280, y: 120 },
-  { id: "stream", icon: "stream", label: "Real-time voice stream", note: "Audio flows in small frames, continuously, not as a finished recording.", x: 600, y: 120 },
-  { id: "agent", icon: "agent", label: "Voice agent", note: "Your configured agent. Its role, rules and guardrails decide how it responds.", x: 940, y: 120 },
-  { id: "model", icon: "brain", label: "AI model", note: "Reasons over what was said, using only the information the agent may see.", x: 1110, y: 290 },
-  { id: "tools", icon: "tools", label: "Tools & workflows", note: "Look things up, book, update records, start follow-ups. Anything that changes something waits for confirmation.", x: 860, y: 460 },
-  { id: "response", icon: "speaker", label: "Voice response", note: "Speech starts on the first finished sentence, and stops the moment the person speaks.", x: 440, y: 460 },
+  { id: "user", icon: "user", label: "Человек", note: "Любой, у кого есть телефон или браузер.", x: 90, y: 290 },
+  { id: "mic", icon: "mic", label: "Микрофон", note: "Голос захватывается на телефонной линии или в браузере.", x: 280, y: 120 },
+  { id: "stream", icon: "stream", label: "Поток голоса", note: "Звук передаётся непрерывно, мелкими кадрами, а не готовой записью.", x: 600, y: 120 },
+  { id: "agent", icon: "agent", label: "Голосовой агент", note: "Ваш настроенный агент. Его роль, правила и ограничения определяют ответ.", x: 940, y: 120 },
+  { id: "model", icon: "brain", label: "ИИ-модель", note: "Рассуждает, опираясь только на ту информацию, которую агент имеет право видеть.", x: 1110, y: 290 },
+  { id: "tools", icon: "tools", label: "Инструменты и сценарии", note: "Ищут данные, записывают, обновляют, запускают перезвонки. Всё, что меняет данные, ждёт подтверждения.", x: 860, y: 460 },
+  { id: "response", icon: "speaker", label: "Голосовой ответ", note: "Речь начинается с первой законченной фразы и останавливается, как только заговорил человек.", x: 440, y: 460 },
 ];
 
 // A rounded rectangle through every node, clockwise from the User node.
@@ -129,12 +129,12 @@ export default function Architecture() {
       <div className="lp-wrap">
         <header className="arch-head">
           <p className="lp-eyebrow">
-            <b>07</b> The real-time loop
+            <b>07</b> Контур реального времени
           </p>
           <h2 className="lp-h2">
-            One loop that <em>never stops.</em>
+            Контур, который <em>никогда не останавливается.</em>
           </h2>
-          <p className="lp-lead">Nothing waits for the step before it. Each stage streams into the next, so the reply starts while the conversation is still happening.</p>
+          <p className="lp-lead">Ничто не ждёт предыдущего шага. Каждый этап передаёт данные следующему, поэтому ответ начинается, пока разговор ещё идёт.</p>
         </header>
 
         <div className="arch-stage">
@@ -175,7 +175,7 @@ export default function Architecture() {
           </div>
         </div>
 
-        <ol className="arch-list" aria-label="The loop, step by step">
+        <ol className="arch-list" aria-label="Контур по шагам">
           {NODES.map((node, index) => (
             <li key={node.id} style={{ "--i": index }}>
               <span>
@@ -189,8 +189,8 @@ export default function Architecture() {
             <span>
               <SiteIcon name="user" size={18} />
             </span>
-            <b>Back to the user</b>
-            <em>And the loop starts again, with every reply changing what the agent hears next.</em>
+            <b>Возврат к человеку</b>
+            <em>И контур запускается снова: каждый ответ меняет то, что агент услышит дальше.</em>
           </li>
         </ol>
       </div>

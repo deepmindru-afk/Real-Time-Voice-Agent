@@ -22,7 +22,6 @@ export const PROBE_TIMEOUT_MS = 5000;
 const UNKNOWN_BACKEND = { reachable: false, available: false, authRequired: false, brain: null, telephony: false, signupEnabled: true };
 
 const unavailable = (error, backend = UNKNOWN_BACKEND) => ({ status: "unavailable", user: null, backend, error });
-
 async function get(path, { fetchImpl, timeoutMs, apiBase }) {
   // The signal covers the whole exchange, body included, so a server that sends headers and
   // then stalls is cut off too.
@@ -36,11 +35,11 @@ export async function probeSession({ fetchImpl = globalThis.fetch.bind(globalThi
   try {
     const response = await get("/api/health", options);
 
-    if (!response.ok) return unavailable(`The server answered ${response.status}.`);
+    if (!response.ok) return unavailable(`Сервер ответил кодом ${response.status}.`);
 
     health = await response.json();
   } catch {
-    return unavailable("Could not reach the server.");
+    return unavailable("Не удалось связаться с сервером.");
   }
 
   const backend = {
@@ -61,12 +60,12 @@ export async function probeSession({ fetchImpl = globalThis.fetch.bind(globalThi
     const response = await get("/api/auth/me", options);
 
     if (response.status === 401) return { status: "unauthenticated", user: null, backend, error: null };
-    if (!response.ok) return unavailable(`The server answered ${response.status}.`, backend);
+    if (!response.ok) return unavailable(`Сервер ответил кодом ${response.status}.`, backend);
 
     const user = (await response.json())?.user;
 
-    return user ? { status: "authenticated", user, backend, error: null } : unavailable("The server sent an unexpected reply.", backend);
+    return user ? { status: "authenticated", user, backend, error: null } : unavailable("Сервер прислал неожиданный ответ.", backend);
   } catch {
-    return unavailable("Could not reach the server.", backend);
+    return unavailable("Не удалось связаться с сервером.", backend);
   }
 }

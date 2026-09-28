@@ -31,32 +31,34 @@ export default function Landing() {
       <Nav />
       <Chapters />
 
-      {voiceStage.enabled && <VoiceStageBoundary tier={voiceStage.tier} onReady={voiceStage.onReady} onGiveUp={voiceStage.onGiveUp} />}
+      {voiceStage.enabled && (
+        <VoiceStageBoundary tier={voiceStage.tier} onReady={voiceStage.onReady} onGiveUp={voiceStage.onGiveUp} />
+      )}
 
       <main>
         <Hero />
-        <Defer id="what" chapter="What it is" minHeight="430vh">
+        <Defer id="what" chapter="Что это" minHeight="430vh">
           <Explain />
         </Defer>
-        <Defer id="demo" chapter="Live demo" minHeight="820px">
+        <Defer id="demo" chapter="Живая демонстрация" minHeight="820px">
           <Demo />
         </Defer>
-        <Defer id="use-cases" chapter="What it can do" minHeight="330vh">
+        <Defer id="use-cases" chapter="Что он умеет" minHeight="330vh">
           <UseCases />
         </Defer>
-        <Defer id="how" chapter="How it works" minHeight="640vh">
+        <Defer id="how" chapter="Как это работает" minHeight="640vh">
           <HowItWorks />
         </Defer>
-        <Defer id="build" chapter="Build an agent" minHeight="860px">
+        <Defer id="build" chapter="Создание агента" minHeight="860px">
           <ConfigPreview />
         </Defer>
-        <Defer id="architecture" chapter="The real-time loop" minHeight="900px">
+        <Defer id="architecture" chapter="Контур реального времени" minHeight="900px">
           <Architecture />
         </Defer>
-        <Defer id="realtime" chapter="Why real-time" minHeight="1000px">
+        <Defer id="realtime" chapter="Почему реальное время" minHeight="1000px">
           <RealtimeMatters />
         </Defer>
-        <Defer id="get-started" chapter="Get started" minHeight="100vh">
+        <Defer id="get-started" chapter="Начало работы" minHeight="100vh">
           <CallToAction />
         </Defer>
       </main>
@@ -66,14 +68,16 @@ export default function Landing() {
           <Link to="/" className="lp-brand">
             <Logo />
             <span>
-              <b>Real-Time</b> Voice Agent
+              <b>АО «Портал»</b> Голосовые ИИ-агенты
             </span>
           </Link>
-          <nav aria-label="Footer">
-            <Link to="/signin" transition>Sign in</Link>
+          <nav aria-label="Подвал">
+            <Link to="/signin" transition>
+              Войти
+            </Link>
             {signupOpen && (
               <Link to="/signup" transition>
-                Sign up
+                Регистрация
               </Link>
             )}
           </nav>
@@ -82,7 +86,6 @@ export default function Landing() {
     </div>
   );
 }
-
 
 function VoiceStageBoundary(props) {
   return (

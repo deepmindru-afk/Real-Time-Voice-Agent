@@ -14,7 +14,7 @@
 // Pure, so the whole machine can be exercised without React or a network.
 
 // Shown on the sign-in screen when a session ended underneath the person (as opposed to them signing out).
-export const SESSION_EXPIRED = "Your session has expired. Please sign in again.";
+export const SESSION_EXPIRED = "Сессия истекла. Пожалуйста, войдите снова.";
 
 export const INITIAL = {
   status: "initializing",

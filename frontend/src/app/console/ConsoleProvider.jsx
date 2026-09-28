@@ -49,7 +49,8 @@ export default function ConsoleProvider({ children }) {
   const agentContext = useMemo(() => (agentRecord ? resolveConfig(fromAgentPayload(agentRecord)) : null), [agentRecord]);
 
   const agent = useVoiceAgent(profile, { customerRef, agentConfig: agentContext });
-  const serverBrain = agent.brain.source === "server";
+  // LiveKit and the server brain both mean "there is a backend behind this".
+  const serverBrain = agent.brain.available;
   const isActive = agent.callState !== "idle" && agent.callState !== "ended";
 
   useEffect(() => {

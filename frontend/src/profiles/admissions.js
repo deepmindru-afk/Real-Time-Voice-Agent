@@ -1,79 +1,86 @@
-import { listSentence, makeGreeting, rupees } from "./shared.js";
+import { listSentence, makeGreeting, rubles } from "./shared.js";
 
+// The slots, as a person would name them. A time is always given as a suggestion, so
+// a request that names none of these still gets a concrete answer.
 const SLOTS = {
-  morning: "Thursday at 10 AM",
-  afternoon: "Thursday at 4 PM",
-  evening: "Friday at 6 PM",
+  утро: "в четверг в 10:00",
+  утром: "в четверг в 10:00",
+  день: "в четверг в 16:00",
+  днём: "в четверг в 16:00",
+  после: "в четверг в 16:00",
+  вечер: "в пятницу в 18:00",
+  вечером: "в пятницу в 18:00",
 };
 
 function requestedSlot(text) {
-  const key = Object.keys(SLOTS).find((word) => text.toLowerCase().includes(word));
+  const value = text.toLowerCase();
+  const key = Object.keys(SLOTS).find((word) => value.includes(word));
 
-  return SLOTS[key ?? "afternoon"];
+  return SLOTS[key ?? "день"];
 }
 
 export default {
   id: "admissions",
-  name: "Admissions Office",
-  vertical: "Admissions",
-  workspaceLabel: "Admissions Desk Workspace",
-  counterparty: "applicant",
+  name: "Приёмная комиссия",
+  vertical: "Приёмная кампания",
+  workspaceLabel: "Рабочее пространство приёмной комиссии",
+  counterparty: "абитуриента",
 
-  headline: "How can I help with your application?",
+  headline: "Чем могу помочь с вашей заявкой?",
   description:
-    "Speak naturally with the AI voice agent about your application status, program details or booking a counselor call.",
+    "Обсудите с голосовым ИИ-агентом статус заявки, условия программы или запись на консультацию.",
 
   greeting: makeGreeting(
-    "I'm the virtual assistant for the Lakeview University admissions office, speaking with Kavya Reddy.",
-    "I can help with your application status, your document checklist, program details, or booking a counselor call. What would you like to know?"
+    "Я голосовой ассистент приёмной комиссии АО «Портал», говорю с Кавья Редди.",
+    "Я могу помочь со статусом заявки, списком документов, условиями программы и записью на консультацию. Что вас интересует?"
   ),
 
   prompts: [
-    "What's my application status?",
-    "Which documents are pending?",
-    "Tell me about the program",
-    "What are the deadlines?",
-    "Book a counselor call",
+    "Какой статус моей заявки?",
+    "Какие документы ещё нужны?",
+    "Расскажите о программе",
+    "Какие сроки подачи?",
+    "Записаться на консультацию",
   ],
 
   capabilities: [
-    "check your application status",
-    "review your document checklist",
-    "explain the program",
-    "share key deadlines",
-    "book a counselor call",
+    "проверить статус заявки",
+    "показать список документов",
+    "рассказать о программе",
+    "напомнить о ключевых сроках",
+    "записать на консультацию",
   ],
 
   nextSteps: [
-    "Upload the remaining documents",
-    "Prepare for the interview",
-    "Attend the scheduled counselor call",
+    "Загрузить оставшиеся документы",
+    "Подготовиться к собеседованию",
+    "Прийти на назначенную консультацию",
   ],
 
   data: {
-    applicant: "Kavya Reddy",
+    applicant: "Кавья Редди",
     application: {
-      id: "ADM-2026-0412",
-      program: "MSc Data Science",
-      status: "documents verified, awaiting interview",
+      id: "ЗАЯВ-2026-0412",
+      program: "Магистратура «Аналитика данных»",
+      status: "документы проверены, ожидается собеседование",
       checklist: [
-        { item: "transcripts", done: true },
-        { item: "statement of purpose", done: true },
-        { item: "recommendation letter", done: false },
-        { item: "English proficiency score", done: true },
+        { item: "аттестат", done: true },
+        { item: "мотивационное письмо", done: true },
+        { item: "рекомендательное письмо", done: false },
+        { item: "результаты языкового теста", done: true },
       ],
-      interview: "not yet scheduled",
+      interview: "ещё не назначено",
     },
     program: {
-      duration: "two years",
+      duration: "два года",
       fee: 385000,
-      intake: "January 2027",
-      format: "on campus with an optional industry placement",
+      intake: "январь 2027",
+      format: "очная форма с возможностью стажировки в компании",
     },
     deadlines: [
-      { label: "Document submission", date: "30 September 2026" },
-      { label: "Interviews", date: "the first two weeks of October 2026" },
-      { label: "Fee payment after offer", date: "15 November 2026" },
+      { label: "Приём документов", date: "30 сентября 2026" },
+      { label: "Собеседования", date: "первые две недели октября 2026" },
+      { label: "Оплата обучения после оферты", date: "15 ноября 2026" },
     ],
     counselorCalls: [],
   },
@@ -81,8 +88,8 @@ export default {
   intents: [
     {
       id: "book_counselor",
-      topic: "Counselor call",
-      match: /\b(counsel|counselor|counsellor|book|schedule|call me|talk to|speak to)\b/i,
+      topic: "Консультация",
+      match: /\b(консультац\w*|консультант\w*|записат\w*|назначит\w*|поговорить\s+с|позвоните\s+мне|звонок)\b/i,
       propose: (data, text) => ({
         tool: "schedule_counselor_call",
         args: { slot: requestedSlot(text), application_id: data.application.id },
@@ -90,9 +97,9 @@ export default {
     },
     {
       id: "documents",
-      topic: "Document checklist",
+      topic: "Список документов",
       tool: "get_checklist",
-      match: /\b(document|documents|checklist|missing|pending|outstanding|submitted)\b/i,
+      match: /\b(документ\w*|чек-лист|не\s+хватает|ожида\w*|не\s+пода\w*)\b/i,
       run: (data) => {
         const missing = data.application.checklist.filter((entry) => !entry.done).map((entry) => entry.item);
 
@@ -100,53 +107,53 @@ export default {
           args: { application_id: data.application.id },
           result: data.application.checklist,
           reply: missing.length
-            ? `Your checklist is nearly complete. Still pending: ${listSentence(missing)}.`
-            : "All your documents have been received and verified.",
-          ref: `Application: ${data.application.id}`,
+            ? `Список почти готов. Осталось предоставить: ${listSentence(missing)}.`
+            : "Все документы получены и проверены.",
+          ref: `Заявка: ${data.application.id}`,
         };
       },
     },
     {
       id: "program",
-      topic: "Program details",
+      topic: "Условия программы",
       tool: "get_program_details",
-      match: /\b(program|programme|course|curriculum|duration|fee|fees|intake|cost)\b/i,
+      match: /\b(программ\w*|курс\w*|учебн\w*\s+план\w*|длительност\w*|стоимост\w*|сколько\s+стоит|цена)\b/i,
       run: (data) => {
         const { program, application } = data;
 
         return {
           args: { program: application.program },
           result: program,
-          reply: `${application.program} is a ${program.duration} program, ${program.format}. The next intake is ${program.intake} and the fee is ${rupees(program.fee)}.`,
-          ref: `Program: ${application.program}`,
+          reply: `${application.program} — программа на ${program.duration}, ${program.format}. Ближайший набор — ${program.intake}, стоимость обучения ${rubles(program.fee)}.`,
+          ref: `Программа: ${application.program}`,
         };
       },
     },
     {
       id: "deadlines",
-      topic: "Deadlines",
+      topic: "Сроки приёма",
       tool: "get_deadlines",
-      match: /\b(deadline|deadlines|last date|when|due)\b/i,
+      match: /\b(срок\w*|дедлайн\w*|до\s+какого|когда\s+пода\w*|последн\w*\s+день)\b/i,
       run: (data) => ({
         args: {},
         result: data.deadlines,
-        reply: `Key dates: ${data.deadlines.map((entry) => `${entry.label} by ${entry.date}`).join("; ")}.`,
-        ref: "Admissions calendar",
+        reply: `Ключевые даты: ${listSentence(data.deadlines.map((entry) => `${entry.label} — до ${entry.date}`))}.`,
+        ref: "Календарь приёмной кампании",
       }),
     },
     {
       id: "status",
-      topic: "Application status",
+      topic: "Статус заявки",
       tool: "get_application_status",
-      match: /\b(status|application|progress|update|interview)\b/i,
+      match: /\b(статус\w*|заявк\w*|как\s+продвига\w*|собеседован\w*|результат\w*)\b/i,
       run: (data) => {
         const { application } = data;
 
         return {
           args: { application_id: application.id },
           result: application,
-          reply: `Your application ${application.id} for ${application.program} is ${application.status}. The interview is ${application.interview}.`,
-          ref: `Application: ${application.id}`,
+          reply: `Ваша заявка ${application.id} на программу «${application.program}» — статус: ${application.status}. Собеседование пока ${application.interview}.`,
+          ref: `Заявка: ${application.id}`,
         };
       },
     },
@@ -154,11 +161,11 @@ export default {
 
   actions: {
     schedule_counselor_call: {
-      label: "Schedule counselor call",
-      describe: (args) => `book a counselor call for you on ${args.slot}`,
+      label: "Записать на консультацию",
+      describe: (args) => `записать вас на консультацию ${args.slot}`,
       execute: (args, data) => {
         const booking = {
-          booking_id: `CNS-${710 + data.counselorCalls.length}`,
+          booking_id: `КОНС-${710 + data.counselorCalls.length}`,
           slot: args.slot,
           application_id: args.application_id,
         };
@@ -167,9 +174,9 @@ export default {
 
         return {
           result: booking,
-          summary: `Counselor call ${booking.booking_id} booked for ${args.slot}`,
-          reply: `Done. Your counselor call is booked for ${args.slot}. The confirmation reference is ${booking.booking_id}.`,
-          ref: `Booking: ${booking.booking_id}`,
+          summary: `Консультация ${booking.booking_id} назначена на ${args.slot}`,
+          reply: `Готово. Вы записаны на консультацию ${args.slot}. Номер подтверждения — ${booking.booking_id}.`,
+          ref: `Запись: ${booking.booking_id}`,
         };
       },
     },

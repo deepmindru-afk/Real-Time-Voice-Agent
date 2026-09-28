@@ -17,20 +17,29 @@ import { splitSentences } from "./sentences.js";
 
 const HEALTH_TIMEOUT_MS = 2000;
 
-// Is there a server with an LLM behind it? Resolves { available, brain }.
+// Is there a server with an LLM behind it? Resolves { available, brain, livekit, ... }.
+// `livekit` is the server's own answer to "can you mint a room token for me?" - a
+// deployment that has not wired one up is not a LiveKit deployment, however healthy
+// the rest of it is.
 export async function detectBackend() {
   try {
     const response = await fetch(`${API_BASE}/api/health`, {
       signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
     });
 
-    if (!response.ok) return { available: false, brain: null, authRequired: false, telephony: false };
+    if (!response.ok) return { available: false, brain: null, authRequired: false, telephony: false, livekit: false };
 
-    const { brain, auth_required: authRequired, telephony } = await response.json();
+    const { brain, auth_required: authRequired, telephony, livekit } = await response.json();
 
-    return { available: Boolean(brain), brain, authRequired: Boolean(authRequired), telephony: Boolean(telephony) };
+    return {
+      available: Boolean(brain),
+      brain,
+      authRequired: Boolean(authRequired),
+      telephony: Boolean(telephony),
+      livekit: Boolean(livekit),
+    };
   } catch {
-    return { available: false, brain: null, authRequired: false, telephony: false };
+    return { available: false, brain: null, authRequired: false, telephony: false, livekit: false };
   }
 }
 

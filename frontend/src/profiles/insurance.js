@@ -1,76 +1,80 @@
-import { listSentence, makeGreeting, rupees } from "./shared.js";
+import { listSentence, makeGreeting, rubles } from "./shared.js";
 
+// What a claim can be about, in the words a person would use, mapped to the type the
+// system stores. Accepts the words as they are actually said out loud.
 const CLAIM_TYPES = {
-  hospital: "hospitalisation",
-  hospitalisation: "hospitalisation",
-  hospitalization: "hospitalisation",
-  surgery: "hospitalisation",
-  pharmacy: "pharmacy reimbursement",
-  medicine: "pharmacy reimbursement",
-  diagnostic: "diagnostics",
-  test: "diagnostics",
+  "стационар": "госпитализация",
+  "больниц": "госпитализация",
+  "госпитализа": "госпитализация",
+  "операц": "госпитализация",
+  "лекарств": "возмещение лекарств",
+  "аптек": "возмещение лекарств",
+  "диагност": "диагностика",
+  "обследован": "диагностика",
+  "анализ": "диагностика",
 };
 
 function claimType(text) {
-  const word = Object.keys(CLAIM_TYPES).find((key) => text.toLowerCase().includes(key));
+  const value = text.toLowerCase();
+  const word = Object.keys(CLAIM_TYPES).find((key) => value.includes(key));
 
   return word ? CLAIM_TYPES[word] : null;
 }
 
 export default {
   id: "insurance",
-  name: "Insurance Desk",
-  vertical: "Insurance",
-  workspaceLabel: "Insurance Service Workspace",
-  counterparty: "policyholder",
+  name: "Страховая служба",
+  vertical: "Страхование",
+  workspaceLabel: "Рабочее пространство страховой службы",
+  counterparty: "страхователя",
 
-  headline: "How can I help with your policy?",
+  headline: "Чем могу помочь по вашему договору?",
   description:
-    "Speak naturally with the AI voice agent about renewals, claim updates, your coverage or filing a new claim.",
+    "Обсудите с голосовым ИИ-агентом продление договора, статус обращения, покрытие или оформление нового обращения.",
 
   greeting: makeGreeting(
-    "I'm the virtual assistant for Shieldwell Insurance, speaking with Arjun Nair.",
-    "I can help with your renewal, an existing claim, your coverage, or filing a new claim. What would you like to do?"
+    "Я голосовой ассистент страховой службы АО «Портал», говорю с Аргуном Nair.",
+    "Я могу помочь с продлением договора, текущим обращением, покрытием или оформлением нового обращения. Что вас интересует?"
   ),
 
   prompts: [
-    "When is my renewal due?",
-    "What's the status of my claim?",
-    "What does my policy cover?",
-    "File a claim for hospitalisation",
+    "Когда продление договора?",
+    "Какой статус обращения?",
+    "Что покрывает мой договор?",
+    "Оформить обращение по стационару",
   ],
 
   capabilities: [
-    "check your renewal",
-    "update you on a claim",
-    "explain your coverage",
-    "file a new claim",
+    "проверить срок продления",
+    "сообщить статус обращения",
+    "объяснить условия покрытия",
+    "оформить новое обращение",
   ],
 
   nextSteps: [
-    "Upload the discharge summary for claim CLM-5521",
-    "Pay the renewal premium before the due date",
-    "Track any newly filed claim in the portal",
+    "Загрузить выписку по обращению ОБР-5521",
+    "Оплатить страховую премию до даты продления",
+    "Отследить новое обращение в портале",
   ],
 
   data: {
-    policyholder: "Arjun Nair",
+    policyholder: "Аргун Наир",
     policy: {
-      id: "POL-88213",
-      type: "family health",
+      id: "ДОГ-88213",
+      type: "семейное медицинское",
       sumInsured: 500000,
       premium: 14200,
-      renewalDate: "14 October 2026",
+      renewalDate: "14 октября 2026",
       daysToRenewal: 25,
-      covers: ["hospitalisation", "day-care procedures", "pre and post hospitalisation costs", "ambulance charges"],
+      covers: ["госпитализация", "дневной стационар", "расходы до и после госпитализации", "расходы на скорую помощь"],
     },
     claims: [
       {
-        id: "CLM-5521",
-        type: "hospitalisation",
-        status: "under assessment",
+        id: "ОБР-5521",
+        type: "госпитализация",
+        status: "на рассмотрении",
         amount: 62000,
-        pendingDocs: ["discharge summary"],
+        pendingDocs: ["выписка из стационара"],
       },
     ],
   },
@@ -78,15 +82,14 @@ export default {
   intents: [
     {
       id: "file_claim",
-      topic: "New claim",
-      match: /\b(file|raise|register|submit|lodge|make)\b.*\bclaim\b|\bnew claim\b/i,
+      topic: "Новое обращение",
+      match: /\b(оформи\w*|пода\w*|заяв\w*)\b[^.?!\n]{0,30}\b(обращен\w*|страхов\w*\s+случа)\w*/i,
       propose: (data, text) => {
         const type = claimType(text);
 
         if (!type) {
           return {
-            reply:
-              "Happy to. What is the claim for: hospitalisation, pharmacy reimbursement, or diagnostics?",
+            reply: "Конечно. Уточните, пожалуйста: обращение по госпитализации, по лекарствам или по диагностике?",
           };
         }
 
@@ -95,52 +98,52 @@ export default {
     },
     {
       id: "claim_status",
-      topic: "Claim status",
+      topic: "Статус обращения",
       tool: "get_claim_status",
-      match: /\b(claim|claims)\b/i,
+      match: /\b(обращен\w*|случа\w*)\b/i,
       run: (data) => {
         const claim = data.claims[0];
         const docs = claim.pendingDocs.length
-          ? `We're still waiting for the ${listSentence(claim.pendingDocs)}.`
-          : "No documents are pending.";
+          ? `Мы всё ещё ждём ${listSentence(claim.pendingDocs)}.`
+          : "Все документы получены.";
 
         return {
           args: { claim_id: claim.id },
           result: claim,
-          reply: `Claim ${claim.id}, your ${claim.type} claim for ${rupees(claim.amount)}, is ${claim.status}. ${docs}`,
-          ref: `Claim: ${claim.id}`,
+          reply: `Обращение ${claim.id} — ${claim.type} на ${rubles(claim.amount)} — находится в статусе «${claim.status}». ${docs}`,
+          ref: `Обращение: ${claim.id}`,
         };
       },
     },
     {
       id: "renewal",
-      topic: "Policy renewal",
+      topic: "Продление договора",
       tool: "get_renewal",
-      match: /\b(renew|renewal|premium|due|expire|expiry)\b/i,
+      match: /\b(продлен\w*|продлит\w*|преми\w*|срок\w*|истека\w*|истечени\w*)\b/i,
       run: (data) => {
         const { policy } = data;
 
         return {
           args: { policy_id: policy.id },
           result: { renewal_date: policy.renewalDate, premium: policy.premium },
-          reply: `Your ${policy.type} policy ${policy.id} renews on ${policy.renewalDate}, which is ${policy.daysToRenewal} days away. The renewal premium is ${rupees(policy.premium)}.`,
-          ref: `Policy: ${policy.id}`,
+          reply: `Договор ${policy.id} (${policy.type}) продлевается ${policy.renewalDate} — это через ${policy.daysToRenewal} дн. Страховая премия составит ${rubles(policy.premium)}.`,
+          ref: `Договор: ${policy.id}`,
         };
       },
     },
     {
       id: "coverage",
-      topic: "Coverage",
+      topic: "Покрытие",
       tool: "get_policy",
-      match: /\b(cover|covers|coverage|covered|policy|sum insured|benefit)\b/i,
+      match: /\b(покрыва\w*|покрыти\w*|договор\w*|страховк\w*|сумм\w*\s+покрыт\w*|льгот\w*)\b/i,
       run: (data) => {
         const { policy } = data;
 
         return {
           args: { policy_id: policy.id },
           result: policy,
-          reply: `Your ${policy.type} policy ${policy.id} has a sum insured of ${rupees(policy.sumInsured)}. It covers ${listSentence(policy.covers)}.`,
-          ref: `Policy: ${policy.id}`,
+          reply: `Договор ${policy.id} (${policy.type}) имеет сумму покрытия ${rubles(policy.sumInsured)}. Он покрывает: ${listSentence(policy.covers)}.`,
+          ref: `Договор: ${policy.id}`,
         };
       },
     },
@@ -148,25 +151,24 @@ export default {
 
   actions: {
     file_claim: {
-      label: "File claim",
-      describe: (args) =>
-        `file a new ${args.type} claim under policy ${args.policy_id}`,
+      label: "Оформить обращение",
+      describe: (args) => `оформить новое обращение (${args.type}) по договору ${args.policy_id}`,
       execute: (args, data) => {
         const claim = {
-          id: `CLM-${5530 + data.claims.length - 1}`,
+          id: `ОБР-${5530 + data.claims.length - 1}`,
           type: args.type,
-          status: "registered",
+          status: "зарегистрировано",
           amount: 0,
-          pendingDocs: ["claim form", "supporting bills"],
+          pendingDocs: ["заявление о страховом случае", "подтверждающие документы"],
         };
 
         data.claims.unshift(claim);
 
         return {
           result: claim,
-          summary: `Claim ${claim.id} filed (${claim.type})`,
-          reply: `Done. I've filed claim ${claim.id} for ${claim.type}. You'll need to send the ${listSentence(claim.pendingDocs)}, and the claims team will contact you.`,
-          ref: `Claim: ${claim.id}`,
+          summary: `Обращение ${claim.id} оформлено (${claim.type})`,
+          reply: `Готово. Обращение ${claim.id} по типу «${claim.type}» зарегистрировано. Вам нужно будет отправить ${listSentence(claim.pendingDocs)}, после чего с вами свяжется специалист по обращениям.`,
+          ref: `Обращение: ${claim.id}`,
         };
       },
     },

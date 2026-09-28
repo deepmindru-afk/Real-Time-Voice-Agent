@@ -7,10 +7,16 @@ import Logo from "../components/Logo.jsx";
 import { subscribeScroll } from "./hooks/scrollTicker.js";
 import { scrollToSection } from "./hooks/scrollTo.js";
 
+const BRAND = (
+  <>
+    <b>АО «Портал»</b> Голосовые ИИ-агенты
+  </>
+);
+
 const LINKS = [
-  ["How it works", "how"],
-  ["Use cases", "use-cases"],
-  ["Platform", "product"],
+  ["Как это работает", "how"],
+  ["Сценарии", "use-cases"],
+  ["Платформа", "product"],
 ];
 
 export default function Nav() {
@@ -27,7 +33,7 @@ export default function Nav() {
         read: ({ y }) => y > 24,
         write: (scrolled) => ref.current?.classList.toggle("is-scrolled", scrolled),
       }),
-    [],
+    []
   );
 
   useEffect(() => {
@@ -49,14 +55,12 @@ export default function Nav() {
   return (
     <header ref={ref} className={`lp-nav ${open ? "is-open" : ""}`}>
       <div className="lp-nav-bar">
-        <Link to="/" className="lp-brand" aria-label="Real-Time Voice Agent, home">
+        <Link to="/" className="lp-brand" aria-label="АО «Портал», на главную">
           <Logo />
-          <span>
-            <b>Real-Time</b> Voice Agent
-          </span>
+          <span>{BRAND}</span>
         </Link>
 
-        <nav className="lp-nav-links" aria-label="Sections">
+        <nav className="lp-nav-links" aria-label="Разделы">
           {LINKS.map(([label, id]) => (
             <a key={id} href={`#${id}`} onClick={go(id)}>
               {label}
@@ -67,24 +71,34 @@ export default function Nav() {
         <div className="lp-nav-actions">
           {inApp ? (
             <Link to="/app/dashboard" transition className="lp-btn lp-btn--primary lp-btn--sm">
-              Open app <Arrow size={16} />
+              Открыть консоль <Arrow size={16} />
             </Link>
           ) : (
             <>
-              {/* with sign-up open, "Sign in" is the quiet link and "Sign up" the button; with it closed, sign-in is the only way in */}
-              <Link to="/signin" transition className={signupOpen ? "lp-nav-signin" : "lp-btn lp-btn--primary lp-btn--sm"}>
-                Sign in {!signupOpen && <Arrow size={16} />}
+              {/* with sign-up open, "Войти" is the quiet link and "Регистрация" the button; with it closed, sign-in is the only way in */}
+              <Link
+                to="/signin"
+                transition
+                className={signupOpen ? "lp-nav-signin" : "lp-btn lp-btn--primary lp-btn--sm"}
+              >
+                Войти {!signupOpen && <Arrow size={16} />}
               </Link>
               {signupOpen && (
                 <Link to="/signup" transition className="lp-btn lp-btn--primary lp-btn--sm">
-                  Sign up <Arrow size={16} />
+                  Регистрация <Arrow size={16} />
                 </Link>
               )}
             </>
           )}
         </div>
 
-        <button type="button" className="lp-nav-toggle" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen(!open)}>
+        <button
+          type="button"
+          className="lp-nav-toggle"
+          aria-label={open ? "Закрыть меню" : "Открыть меню"}
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+        >
           <span />
           <span />
         </button>
@@ -98,16 +112,21 @@ export default function Nav() {
         ))}
         {inApp ? (
           <Link to="/app/dashboard" transition tabIndex={open ? 0 : -1} className="lp-btn lp-btn--primary">
-            Open app <Arrow size={16} />
+            Открыть консоль <Arrow size={16} />
           </Link>
         ) : (
           <>
-            <Link to="/signin" transition tabIndex={open ? 0 : -1} className={signupOpen ? "lp-btn lp-btn--ghost" : "lp-btn lp-btn--primary"}>
-              Sign in
+            <Link
+              to="/signin"
+              transition
+              tabIndex={open ? 0 : -1}
+              className={signupOpen ? "lp-btn lp-btn--ghost" : "lp-btn lp-btn--primary"}
+            >
+              Войти
             </Link>
             {signupOpen && (
               <Link to="/signup" transition tabIndex={open ? 0 : -1} className="lp-btn lp-btn--primary">
-                Sign up <Arrow size={16} />
+                Регистрация
               </Link>
             )}
           </>

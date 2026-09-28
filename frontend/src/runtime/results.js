@@ -1,4 +1,5 @@
-// The server's call result (snake_case) as the summary card wants it.
+// The server's call result (snake_case) as the summary card wants it, plus how an
+// outcome or job status should read in Russian.
 export function mapResult(result) {
   return {
     callId: result.call_id,
@@ -19,7 +20,7 @@ export function mapResult(result) {
 }
 
 const GOOD = ["completed", "action_completed"];
-const IN_FLIGHT = ["ringing", "in_progress"];
+const IN_FLIGHT = ["ringing", "in_progress", "answered"];
 
 // How an outcome or job status should look: ok | info | warn
 export function toneOf(status) {
@@ -28,6 +29,24 @@ export function toneOf(status) {
   return "warn";
 }
 
+// The status, in words. These are values the server sends, so the Russian is a
+// lookup rather than a guess; anything unrecognised is shown as the raw code
+// instead of being flattened into a wrong word.
+const LABEL = {
+  completed: "Завершён",
+  action_completed: "Действие выполнено",
+  no_answer: "Нет ответа",
+  declined: "Отклонён",
+  cancelled: "Отменён",
+  failed: "Не удался",
+  ringing: "Звонит",
+  answered: "Отвечен",
+  in_progress: "В работе",
+  queued: "В очереди",
+  recorded: "Записан",
+  none: "—",
+};
+
 export function label(status) {
-  return status.replace(/_/g, " ");
+  return LABEL[status] ?? String(status ?? "").replace(/_/g, " ");
 }

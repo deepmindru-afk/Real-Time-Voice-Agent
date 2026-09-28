@@ -42,6 +42,15 @@ const icons = {
     </>
   ),
 
+  // For the "tap to hear the agent" button a browser requires before it will
+  // autoplay the room's audio.
+  speaker: (
+    <>
+      <path d="M11 5 6 9H3v6h3l5 4V5Z" />
+      <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" />
+    </>
+  ),
+
   bell: (
     <>
       <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />

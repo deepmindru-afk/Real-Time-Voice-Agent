@@ -6,21 +6,32 @@
 import { displayName } from "./format.js";
 import { label, toneOf } from "./results.js";
 
-const JOB_TITLE = /\s+(assistant|agent|executive|representative|specialist|associate|advisor|bot)$/i;
-const COVERED = "Covered: ";
-const NO_QUESTIONS = "No questions were asked";
-const EXECUTED = "Executed after confirmation";
+// A configured role reads as a job title ("Ассистент поддержки"), and a call is
+// not that job - it is a conversation with the client. The title is dropped and
+// what is left is what the conversation is about.
+const JOB_TITLE = /\s+(ассистент|агент|оператор|специалист|консультант|менеджер|помощник|бот)$/i;
+const COVERED = "Обсуждено: ";
+const NO_QUESTIONS = "Вопросов не поступило";
+const EXECUTED = "Выполнено после подтверждения";
 
 const LIVE_STATES = ["connecting", "listening", "processing", "speaking"];
 
-const plural = (count, word) => `${count} ${word}${count === 1 ? "" : "s"}`;
+const plural = (count, one, few, many) => {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
 
-// "Patient Support Assistant" -> "Patient Support Conversation". Falls back to the
+  if (mod10 === 1 && mod100 !== 11) return `${count} ${one}`;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${count} ${few}`;
+
+  return `${count} ${many}`;
+};
+
+// "Ассистент поддержки клиентов" -> "Поддержка клиентов". Falls back to the
 // industry, then the built-in profile, so an unconfigured agent still has a name.
 export function conversationTitle({ role, industry, fallback } = {}) {
   const base = (role || industry || fallback || "").replace(JOB_TITLE, "").trim();
 
-  return base ? `${base} Conversation` : "Voice Conversation";
+  return base ? `Разговор: ${base}` : "Голосовой разговор";
 }
 
 // Who the agent is, from the saved configuration when there is one and from the
@@ -44,7 +55,7 @@ export function callStatus(callState, summary, summaryPending) {
   return summaryPending ? "summarizing" : "unavailable";
 }
 
-// Which step of Configure -> Start -> Complete -> Review the person is on.
+// Which step of Настроить -> Начать -> Завершить -> Изучить the person is on.
 export function flowStep(status, configured) {
   if (status === "idle") return configured ? 1 : 0;
   if (status === "live") return 2;
@@ -71,14 +82,14 @@ function buildNotes({ summary, topics, contact, agentName }) {
   const notes = [];
 
   if (topics.length) {
-    notes.push(`${contact} asked about ${topics.join(", ").toLowerCase()}.`);
+    notes.push(`${contact} спрашивал(а): ${topics.join(", ").toLowerCase()}.`);
     notes.push(
       executed
-        ? `${agentName} carried out ${plural(executed, "confirmed action")}.`
-        : `${agentName} provided the requested information.`
+        ? `${agentName} выполнил(а) ${plural(executed, "подтверждённое действие", "подтверждённых действия", "подтверждённых действий")}.`
+        : `${agentName} предоставил(а) запрошенную информацию.`
     );
   } else {
-    notes.push(`${contact} did not ask anything before the call ended.`);
+    notes.push(`${contact} не задал(а) вопросов до завершения звонка.`);
   }
 
   flagsOf(summary).forEach((flag) => notes.push(`${flag}.`));
@@ -93,10 +104,10 @@ function outcomeOf(summary, agentName) {
 
   return {
     ok,
-    headline: ok ? "Call completed successfully" : `Call ended: ${label(summary.outcome)}`,
+    headline: ok ? "Звонок успешно завершён" : `Звонок завершён: ${label(summary.outcome)}`,
     detail: ok
-      ? `The conversation was handled by ${agentName}.`
-      : `${agentName} could not fully complete this call.`,
+      ? `Разговор проведён агентом «${agentName}».`
+      : `${agentName} не удалось полностью завершить этот звонок.`,
   };
 }
 

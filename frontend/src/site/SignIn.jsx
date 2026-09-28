@@ -81,7 +81,7 @@ function GoogleSignIn({ onCredential, busy }) {
         if (attempts < GOOGLE_LOAD_ATTEMPTS) {
           timer = window.setTimeout(start, 100);
         } else {
-          console.error("Google Identity Services failed to load.");
+          console.error("Не удалось загрузить Google Identity Services.");
           setState("failed");
         }
 
@@ -133,16 +133,16 @@ function GoogleSignIn({ onCredential, busy }) {
     <div className="signin-alt">
       {state !== "failed" && (
         <div className="signin-divider" aria-hidden="true">
-          <span>or</span>
+          <span>или</span>
         </div>
       )}
 
       {state === "failed" ? (
         <p className="signin-google-note" role="status">
-          Google sign-in could not load. Use your email and password instead.
+          Не удалось загрузить вход через Google. Используйте почту и пароль.
         </p>
       ) : (
-        <div className={`signin-google ${state === "loading" ? "is-loading" : ""} ${busy ? "is-busy" : ""}`} role="group" aria-label="Sign in with Google" aria-busy={busy || state === "loading"}>
+        <div className={`signin-google ${state === "loading" ? "is-loading" : ""} ${busy ? "is-busy" : ""}`} role="group" aria-label="Вход через Google" aria-busy={busy || state === "loading"}>
           <div ref={buttonRef} className="signin-google-button" />
         </div>
       )}
@@ -195,7 +195,7 @@ export default function SignIn() {
   const onGoogleCredential = useCallback(
     async (response) => {
       if (!response?.credential) {
-        setFailure({ source: "google", message: "Google did not return a sign-in. Please try again." });
+        setFailure({ source: "google", message: "Google не вернул данные для входа. Попробуйте снова." });
         return;
       }
 
@@ -214,7 +214,7 @@ export default function SignIn() {
     [signInWithGoogle],
   );
 
-  if (decision.kind === "redirect") return <Splash label="Signing you in" />;
+  if (decision.kind === "redirect") return <Splash label="Выполняем вход" />;
 
   const initializing = status === "initializing";
   const open = status === "open";
@@ -226,28 +226,28 @@ export default function SignIn() {
   return (
     <AuthLayout working={pending !== null}>
           <p className="lp-eyebrow">
-            <span className="live-dot" aria-hidden="true" /> {open ? "Open workspace" : "Welcome back"}
+            <span className="live-dot" aria-hidden="true" /> {open ? "Открытое рабочее пространство" : "С возвращением"}
           </p>
 
           {open ? (
             <>
-              <h1>No sign-in needed</h1>
+              <h1>Вход не требуется</h1>
 
               <p className="signin-lead">
                 {backend.reachable
-                  ? "This server has sign-in turned off, so the workspace is open."
-                  : "You chose to work offline, so the console runs on this device only."}
+                  ? "На этом сервере вход отключён, поэтому рабочее пространство открыто."
+                  : "Вы выбрали работу без сервера, поэтому консоль работает только на этом устройстве."}
               </p>
 
               <Link to="/app/dashboard" transition className="lp-btn lp-btn--primary signin-submit">
-                Open the workspace <Arrow />
+                Открыть рабочее пространство <Arrow />
               </Link>
             </>
           ) : (
             <>
-              <h1>Sign in</h1>
+              <h1>Вход</h1>
 
-              <p className="signin-lead">Sign in to your workspace with your email and password, or continue with Google if your account uses the same email.</p>
+              <p className="signin-lead">Войдите в рабочее пространство по почте и паролю или продолжите через Google, если ваш аккаунт использует тот же адрес.</p>
 
               {sessionNotice && (
                 <p className="signin-notice" role="status">
@@ -258,23 +258,23 @@ export default function SignIn() {
               {unavailable && (
                 <div className="signin-banner" role="alert">
                   <p>
-                    <b>We can't reach the server.</b> {serverError}
+                    <b>Не удалось связаться с сервером.</b> {serverError}
                   </p>
 
                   <span>
                     <button type="button" onClick={retry}>
-                      Try again
+                      Попробовать снова
                     </button>
 
                     <button type="button" onClick={enterOffline}>
-                      Continue offline
+                      Продолжить без сервера
                     </button>
                   </span>
                 </div>
               )}
 
               <form className="signin-form" onSubmit={submit} noValidate>
-                <label htmlFor="si-email">Email</label>
+                <label htmlFor="si-email">Электронная почта</label>
 
                 <input
                   id="si-email"
@@ -288,7 +288,7 @@ export default function SignIn() {
                   required
                 />
 
-                <label htmlFor="si-password">Password</label>
+                <label htmlFor="si-password">Пароль</label>
 
                 <span className="signin-password">
                   <input
@@ -302,8 +302,8 @@ export default function SignIn() {
                     required
                   />
 
-                  <button type="button" onClick={() => setShow(!show)} aria-label={show ? "Hide password" : "Show password"}>
-                    {show ? "Hide" : "Show"}
+                  <button type="button" onClick={() => setShow(!show)} aria-label={show ? "Скрыть пароль" : "Показать пароль"}>
+                    {show ? "Скрыть" : "Показать"}
                   </button>
                 </span>
 
@@ -314,7 +314,8 @@ export default function SignIn() {
                 )}
 
                 <button className="lp-btn lp-btn--primary signin-submit" type="submit" disabled={pending !== null || initializing || !email || !password}>
-                  {pending === "password" ? "Signing in…" : initializing ? "Connecting…" : "Sign in"} {pending === null && !initializing && <Arrow />}
+                  {pending === "password" ? "Выполняем вход…" : initializing ? "Соединение…" : "Войти"}{" "}
+                  {pending === null && !initializing && <Arrow />}
                 </button>
               </form>
 
@@ -322,7 +323,7 @@ export default function SignIn() {
 
               {pending === "google" && (
                 <p className="signin-status" role="status">
-                  Signing you in with Google…
+                  Выполняем вход через Google…
                 </p>
               )}
 
@@ -335,12 +336,12 @@ export default function SignIn() {
               <p className="signin-foot">
                 {backend.signupEnabled ? (
                   <>
-                    New here? <Link to={withNext("/signup", search)}>Create an account</Link>.
+                    Впервые здесь? <Link to={withNext("/signup", search)}>Создайте аккаунт</Link>.
                   </>
                 ) : (
-                  <>Sign-up is closed on this server. Ask your workspace administrator to add you.</>
+                  <>Регистрация на этом сервере закрыта. Попросите администратора рабочего пространства добавить вас.</>
                 )}{" "}
-                <Link to="/">Back to the site</Link>
+                <Link to="/">Вернуться на сайт</Link>
               </p>
             </>
           )}

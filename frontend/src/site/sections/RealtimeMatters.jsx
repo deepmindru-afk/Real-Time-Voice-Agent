@@ -141,19 +141,19 @@ export default function RealtimeMatters() {
       <div className="lp-wrap">
         <header className="rt-head">
           <p className="lp-eyebrow">
-            <b>08</b> Why real-time matters
+            <b>08</b> Почему важно реальное время
           </p>
           <h2 className="lp-h2">
-            A conversation isn't turn-taking. <em>It's continuous.</em>
+            Разговор — это не очередь реплик. <em>Это непрерывный поток.</em>
           </h2>
         </header>
 
-        <div className="rt-toggle" role="group" aria-label="Compare how a reply is produced">
+        <div className="rt-toggle" role="group" aria-label="Сравнение способов формирования ответа">
           <button type="button" className={mode === "turn" ? "is-on" : ""} aria-pressed={mode === "turn"} onClick={() => choose("turn")}>
-            Turn-based bot
+            Бот с очередью реплик
           </button>
           <button type="button" className={mode === "realtime" ? "is-on" : ""} aria-pressed={mode === "realtime"} onClick={() => choose("realtime")}>
-            Real-time agent
+            Агент реального времени
           </button>
         </div>
 
@@ -187,7 +187,7 @@ export default function RealtimeMatters() {
         <footer className="rt-foot">
           <p aria-live="polite">{verdictFor(mode, interrupted)}</p>
           <button type="button" className="lp-btn lp-btn--ghost" onClick={() => setInterrupted(!interrupted)} aria-pressed={interrupted}>
-            {interrupted ? "Let it finish" : "Interrupt it"}
+            {interrupted ? "Дать договорить" : "Перебить"}
           </button>
         </footer>
       </div>

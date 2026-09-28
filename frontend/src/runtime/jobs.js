@@ -30,7 +30,7 @@ export function buildCallJobPayload({
   if (linked.length) {
     const organizations = new Set(linked.map((record) => record.organization_id));
     if (organizations.size !== 1) {
-      throw new Error("The agent, contact and workflow must belong to the same organization");
+      throw new Error("Агент, контакт и сценарий должны принадлежать одной организации");
     }
 
     payload.organization_id = [...organizations][0];

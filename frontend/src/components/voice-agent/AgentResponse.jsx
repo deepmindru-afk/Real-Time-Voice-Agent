@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import RealtimeSignal from "../voice/RealtimeSignal";
 
+const TOOL_TAG = "подтверждённое действие";
+
 function ToolCall({ call }) {
   const args = Object.entries(call.args ?? {})
     .map(([key, value]) => `${key}: ${value}`)
@@ -11,7 +13,7 @@ function ToolCall({ call }) {
       <summary>
         <code>{call.name}</code>
         {args && <span className="tool-args">({args})</span>}
-        {call.guarded && <span className="tool-tag">confirmed action</span>}
+        {call.guarded && <span className="tool-tag">{TOOL_TAG}</span>}
       </summary>
 
       <pre>{JSON.stringify(call.result, null, 2)}</pre>
@@ -25,7 +27,7 @@ export default function AgentResponse({
   onRespond,
   onClear,
   canClear,
-  title = "Agent Response",
+  title = "Ответ агента",
   showTools = true,
   agentName = null,
   status = null,
@@ -45,12 +47,14 @@ export default function AgentResponse({
       <div className="card-header">
         <div>
           <span className="card-icon">▤</span>
-          <h3>{title} <span>(Live)</span></h3>
+          <h3>
+            {title} <span>(в реальном времени)</span>
+          </h3>
         </div>
 
         {onClear && (
           <button className="clear-button" onClick={onClear} disabled={!canClear}>
-            Clear
+            Очистить
           </button>
         )}
       </div>
@@ -64,9 +68,7 @@ export default function AgentResponse({
 
       <div className="transcript">
         {messages.length === 0 ? (
-          <div className="empty-transcript">
-            Your conversation transcript will appear here...
-          </div>
+          <div className="empty-transcript">Здесь появится расшифровка вашего разговора...</div>
         ) : (
           messages.map((message) => (
             <div
@@ -77,9 +79,9 @@ export default function AgentResponse({
             >
               <div className="message-top">
                 <strong>
-                  {message.speaker === "Agent" && agentName ? agentName : message.speaker}
-                  {message.blocked && <em className="message-tag">guardrail</em>}
-                  {message.interrupted && <em className="message-tag">interrupted</em>}
+                  {message.speaker === "Agent" && agentName ? agentName : message.speaker === "Agent" ? "Агент" : "Вы"}
+                  {message.blocked && <em className="message-tag">защита</em>}
+                  {message.interrupted && <em className="message-tag">прервано</em>}
                 </strong>
                 <span>{message.time}</span>
               </div>
@@ -94,16 +96,16 @@ export default function AgentResponse({
         )}
 
         {pending && (
-          <div className="confirm-card" role="alertdialog" aria-label="Confirm action">
-            <div className="confirm-title">Confirmation needed</div>
-            <p>The agent wants to {pending.label}.</p>
+          <div className="confirm-card" role="alertdialog" aria-label="Подтверждение действия">
+            <div className="confirm-title">Требуется подтверждение</div>
+            <p>Агент хочет {pending.label}.</p>
 
             <div className="confirm-buttons">
-              <button className="confirm-yes" onClick={() => onRespond("Yes, confirm")}>
-                Yes, confirm
+              <button className="confirm-yes" onClick={() => onRespond("Да, подтверждаю")}>
+                Да, подтверждаю
               </button>
-              <button className="confirm-no" onClick={() => onRespond("No, cancel")}>
-                No, cancel
+              <button className="confirm-no" onClick={() => onRespond("Нет, отменить")}>
+                Нет, отменить
               </button>
             </div>
           </div>

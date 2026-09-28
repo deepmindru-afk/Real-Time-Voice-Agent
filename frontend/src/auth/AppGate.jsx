@@ -23,5 +23,9 @@ export default function AppGate({ children }) {
   if (decision.kind === "render") return children;
   if (decision.kind === "unavailable") return <ServerUnavailable />;
 
-  return <Splash label={decision.kind === "redirect" ? "Redirecting to sign in" : "Checking your session"} />;
+  return (
+    <Splash
+      label={decision.kind === "redirect" ? "Переходим ко входу" : "Проверяем вашу сессию"}
+    />
+  );
 }

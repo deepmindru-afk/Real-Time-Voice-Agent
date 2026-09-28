@@ -1,16 +1,75 @@
-# React + Vite
+# АО «Портал» — голосовые ИИ-агенты (frontend)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite. Публичный сайт, экран входа и операторская консоль голосовых
+ИИ-агентов. Интерфейс и весь текст, который произносит агент, — на русском.
 
-Currently, two official plugins are available:
+## Запуск
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev      # http://localhost:5173, /api проксируется на 127.0.0.1:8000
+npm run build
+npm run lint
+```
 
-## React Compiler
+## Как устроен звонок
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Звонок выполняет один из двух движков. Выбор происходит автоматически при старте
+звонка, и оператор видит, какой из них работает, в блоке «Голосовая служба» на
+боковой панели.
 
-## Expanding the ESLint configuration
+| Движок | Когда | Кто отвечает |
+| --- | --- | --- |
+| **LiveKit** (основной) | Сервер может выдать токен и браузер поддерживает WebRTC | Агент в комнате LiveKit: распознавание, мышление, озвучивание и перебивание — на его стороне |
+| **local-rules** (офлайн) | Нет сервера, нет токена или браузер не поддерживает WebRTC | Правила в браузере + Web Speech API. Это демонстрация, а не продукт |
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Код движка LiveKit — в `src/runtime/livekit/`:
+
+- `token.js` — запрос токена у сервера
+- `session.js` — комната: микрофон, звук агента, расшифровка, состояние, ввод текстом
+- `support.js` — что именно умеет этот браузер
+- `summary.js` — итог звонка, если сервер не вернул свой
+
+Браузер делает ровно четыре вещи: входит в комнату по выданному сервером токену,
+публикует микрофон, воспроизводит звук агента и читает его расшифровку. Всё
+остальное — распознавание речи, определение turn'ов, рассуждение, инструменты и
+перебивание — происходит на стороне агента.
+
+## Переменные окружения
+
+| Переменная | По умолчанию | Назначение |
+| --- | --- | --- |
+| `VITE_API_BASE` | `""` (тот же origin) | Базовый URL API |
+| `VITE_LIVEKIT_TOKEN_PATH` | `/api/livekit/token` | Эндпоинт, выдающий токен |
+| `VITE_LIVEKIT_URL` | `""` | `wss://…`, если сервер не возвращает URL в ответе |
+| `VITE_GOOGLE_CLIENT_ID` | `""` | Вход через Google; без него кнопка не рисуется |
+
+Токен **никогда** не выдаётся в браузере: `LIVEKIT_API_KEY` и
+`LIVEKIT_API_SECRET` в этой сборке отсутствуют и не должны появляться.
+
+### Контракт эндпоинта токена
+
+```
+POST <VITE_LIVEKIT_TOKEN_PATH>
+  { profile_id, agent_id, customer_ref, job_id?, token? }
+-> 200
+  { token, url?, room?, identity?, call_id? }
+```
+
+Сервер оборачивает `livekit-server-sdk`: выдаёт токен, ограниченный одной
+комнатой, и (при явном agent dispatch) правило `RoomAgentDispatch`, чтобы агент
+вошёл в комнату сразу. Браузеру не нужно знать ни имя комнаты, ни имя агента.
+
+### Проверка доступности
+
+`GET /api/health` может вернуть `livekit: true`. Это ответ сервера на вопрос
+«умеешь ли ты выдать токен для комнаты» — без этого флага развёртывание не
+считается LiveKit, даже если всё остальное здоровье. Если `VITE_LIVEKIT_URL`
+задан, флаг не требуется.
+
+## Демо-профили
+
+Пять отраслевых профилей в `src/profiles/` (`underwriting`, `bank`, `insurance`,
+`telecom`, `admissions`) задают данные, инструменты и ответы локального
+демонстрационного движка. В режиме LiveKit профиль определяет, какой агент будет
+подключён к комнате, и всё остальное решает агент.

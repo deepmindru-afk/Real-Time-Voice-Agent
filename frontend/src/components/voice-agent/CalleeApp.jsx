@@ -7,6 +7,13 @@ import { VOICE_STATE_LABEL, visualForCallState } from "../../runtime/voiceState.
 import { voiceSupport } from "../../runtime/useVoice.js";
 import { useVoiceAgent } from "../../runtime/useVoiceAgent.js";
 
+const STATE_TEXT = {
+  connecting: "Соединение...",
+  listening: "Слушаю...",
+  speaking: "Говорю...",
+  processing: "Думаю...",
+};
+
 // What the person being called sees. They open the link they were sent, the
 // "phone" rings, and they answer or decline. This is the seam a telephony
 // provider will later replace: the server side of the call does not change.
@@ -19,10 +26,7 @@ export default function CalleeApp({ jobId, token }) {
   const agent = useVoiceAgent(profile, { attach });
 
   useEffect(() => {
-    document.documentElement.setAttribute(
-      "data-theme",
-      localStorage.getItem("voice-agent-theme") || "dark"
-    );
+    document.documentElement.setAttribute("data-theme", localStorage.getItem("voice-agent-theme") || "dark");
   }, []);
 
   useEffect(() => {
@@ -31,11 +35,7 @@ export default function CalleeApp({ jobId, token }) {
     fetchRing(jobId, token)
       .then((info) => {
         if (!cancelled) {
-          setRing(
-            info.status === "ringing"
-              ? { state: "ringing", ...info }
-              : { state: "unavailable", ...info }
-          );
+          setRing(info.status === "ringing" ? { state: "ringing", ...info } : { state: "unavailable", ...info });
         }
       })
       .catch(() => {
@@ -58,12 +58,6 @@ export default function CalleeApp({ jobId, token }) {
   };
 
   const inCall = agent.callState !== "idle" && agent.callState !== "ended";
-  const stateText = {
-    connecting: "Connecting...",
-    listening: "Listening...",
-    speaking: "Speaking...",
-    processing: "Thinking...",
-  };
 
   const submit = (event) => {
     event.preventDefault();
@@ -74,13 +68,13 @@ export default function CalleeApp({ jobId, token }) {
   let body;
 
   if (ring.state === "loading") {
-    body = <div className="state-block is-loading">Checking this call...</div>;
+    body = <div className="state-block is-loading">Проверяем этот звонок...</div>;
   } else if (ring.state === "declined") {
-    body = <div className="state-block">You declined the call. You can close this page.</div>;
+    body = <div className="state-block">Вы отклонили звонок. Можете закрыть эту страницу.</div>;
   } else if (agent.callState === "ended") {
     body = (
       <div className="state-block">
-        {agent.callError ?? "The call has ended. Thank you. You can close this page."}
+        {agent.callError ?? "Звонок завершён. Спасибо. Можете закрыть эту страницу."}
       </div>
     );
   } else if (inCall) {
@@ -90,7 +84,7 @@ export default function CalleeApp({ jobId, token }) {
           <CallVisualizer
             state={visualForCallState(agent.callState, Boolean(agent.callError))}
             orbIcon="microphone"
-            statusLabel={stateText[agent.callState] ?? VOICE_STATE_LABEL[agent.callState]}
+            statusLabel={STATE_TEXT[agent.callState] ?? VOICE_STATE_LABEL[agent.callState]}
             size="lg"
           />
         </div>
@@ -98,19 +92,31 @@ export default function CalleeApp({ jobId, token }) {
         <div className="timer callee-timer">{formatTime(agent.duration)}</div>
 
         <div className="live-caption" aria-live="polite">
-          {agent.voice.interim ? `“${agent.voice.interim}”` : " "}
+          {agent.voice.interim ? `«${agent.voice.interim}»` : " "}
         </div>
 
-        {agent.voice.micState === "blocked" && (
-          <p className="voice-notice">Microphone access is blocked. You can type your replies below.</p>
+        {agent.needsAudio && (
+          <p className="voice-notice">
+            Браузер не разрешает включать звук без вашего действия.
+            <button type="button" className="callee-answer" onClick={agent.unlockAudio}>
+              Включить звук
+            </button>
+          </p>
         )}
-        {!voiceSupport.recognition && (
-          <p className="voice-notice">This browser can't hear you (use Chrome or Edge). You can type below.</p>
+
+        {agent.voice.micState === "blocked" && (
+          <p className="voice-notice">Доступ к микрофону заблокирован. Вы можете вводить ответы ниже.</p>
+        )}
+        {!voiceSupport.recognition && !agent.voice.livekit && (
+          <p className="voice-notice">
+            Этот браузер не слышит вас (используйте Chrome или Edge). В режиме LiveKit распознавание выполняет агент.
+            Вы можете вводить ответы ниже.
+          </p>
         )}
 
         <div className="callee-transcript">
           <AgentResponse
-            title="Conversation"
+            title="Разговор"
             messages={agent.messages}
             pending={agent.pending}
             onRespond={agent.sendText}
@@ -123,17 +129,17 @@ export default function CalleeApp({ jobId, token }) {
             type="text"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            placeholder="Or type your reply..."
-            aria-label="Type a message"
+            placeholder="Или введите ответ..."
+            aria-label="Введите сообщение"
           />
           <button type="submit" disabled={!draft.trim()}>
-            Send
+            Отправить
           </button>
         </form>
 
         <button className="stop-button" onClick={agent.endCall}>
           <span className="stop-square" />
-          End call
+          Завершить звонок
         </button>
       </>
     );
@@ -144,23 +150,23 @@ export default function CalleeApp({ jobId, token }) {
           <CallVisualizer
             state="connecting"
             orbIcon="phone"
-            statusLabel="Incoming call"
+            statusLabel="Входящий звонок"
             size="lg"
             showWaveform={false}
           />
         </div>
 
         <p className="callee-note">
-          <strong>{ring.organisation}</strong> is calling. It is an AI assistant, and this call is
-          recorded as a transcript for the business.
+          <strong>{ring.organisation ?? "АО «Портал»"}</strong> звонит вам. Это голосовой ИИ-ассистент, и
+          разговор сохраняется в виде расшифровки.
         </p>
 
         <div className="callee-buttons">
           <button className="callee-answer" onClick={agent.beginCall}>
-            Answer
+            Ответить
           </button>
           <button className="callee-decline" onClick={decline}>
-            Decline
+            Отклонить
           </button>
         </div>
       </>
@@ -168,7 +174,7 @@ export default function CalleeApp({ jobId, token }) {
   } else {
     body = (
       <div className="state-block">
-        This call is no longer available. It may have been answered, declined or timed out.
+        Этот звонок больше недоступен. Возможно, на него уже ответили, отклонили или он истёк.
       </div>
     );
   }
@@ -177,9 +183,9 @@ export default function CalleeApp({ jobId, token }) {
     <div className="callee-page">
       <header className="callee-header">
         <div className="brand-logo">
-          <span>AI</span>
+          <span>П</span>
         </div>
-        <h1>Real-Time Voice Agent</h1>
+        <h1>АО «Портал» — голосовой ИИ-агент</h1>
       </header>
 
       <main className="callee-card">{body}</main>

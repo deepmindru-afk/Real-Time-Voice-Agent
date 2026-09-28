@@ -2,7 +2,7 @@ import { useId } from "react";
 import Icon from "./Icon";
 import { INDUSTRIES, LIMITS, OTHER, ROLE_SUGGESTIONS } from "../../runtime/agentConfig.js";
 
-// The sidebar's "Agent Use Case & Configuration" item. It is its own section, not
+// The sidebar's "Сценарий применения и настройка агента" item. It is its own section, not
 // a parent of the other pages: it only expands to show the few fields that matter
 // most. The rest of the configuration lives in the full panel it opens.
 export default function AgentUseCaseConfig({
@@ -33,18 +33,18 @@ export default function AgentUseCaseConfig({
         onClick={onToggle}
       >
         <Icon name="settings" size={21} />
-        <span>Agent Use Case &amp; Configuration</span>
+        <span>Сценарий применения и настройка агента</span>
         <Icon name={expanded ? "chevronUp" : "chevronRight"} size={18} />
       </button>
 
       {expanded && (
         <div className="config-body-side" id={bodyId}>
-          <p className="config-intro">Tell us what you want your voice agent to do.</p>
+          <p className="config-intro">Опишите, что должен делать ваш голосовой агент.</p>
 
           <fieldset className="config-quick" disabled={locked}>
-            <label htmlFor="side-industry">Use Case / Industry</label>
+            <label htmlFor="side-industry">Сценарий применения / отрасль</label>
             <select id="side-industry" value={draft.industry} onChange={set("industry")}>
-              <option value="">Select a use case…</option>
+              <option value="">Выберите сценарий...</option>
               {INDUSTRIES.map((item) => (
                 <option key={item} value={item}>
                   {item}
@@ -55,32 +55,32 @@ export default function AgentUseCaseConfig({
             {draft.industry === OTHER && (
               <input
                 type="text"
-                aria-label="Your use case or industry"
+                aria-label="Ваш сценарий применения или отрасль"
                 value={draft.industryOther}
                 maxLength={LIMITS.short}
-                placeholder="Your use case, e.g. Aviation"
+                placeholder="Ваша отрасль, например «Логистика»"
                 onChange={set("industryOther")}
               />
             )}
 
-            <label htmlFor="side-agent-name">Agent Name</label>
+            <label htmlFor="side-agent-name">Название агента</label>
             <input
               id="side-agent-name"
               type="text"
               value={draft.agentName}
               maxLength={LIMITS.agentName}
-              placeholder="e.g. MineAssist"
+              placeholder="например, АссистентПортал"
               onChange={set("agentName")}
             />
 
-            <label htmlFor="side-role">Agent Role</label>
+            <label htmlFor="side-role">Роль агента</label>
             <input
               id="side-role"
               type="text"
               list={roles.length ? roleListId : undefined}
               value={draft.role}
               maxLength={LIMITS.role}
-              placeholder={roles[0] ?? "What role should it perform?"}
+              placeholder={roles[0] ?? "Какую роль он выполняет?"}
               onChange={set("role")}
             />
             {roles.length > 0 && (
@@ -91,33 +91,33 @@ export default function AgentUseCaseConfig({
               </datalist>
             )}
 
-            <label htmlFor="side-purpose">Purpose</label>
+            <label htmlFor="side-purpose">Назначение</label>
             <textarea
               id="side-purpose"
               rows={3}
               value={draft.purpose}
               maxLength={LIMITS.purpose}
-              placeholder="What should it help users accomplish?"
+              placeholder="В чём он поможет пользователям?"
               onChange={set("purpose")}
             />
           </fieldset>
 
           <button type="button" className="config-open" disabled={locked} onClick={onConfigure}>
-            {configured ? "Edit Configuration" : "Configure Agent"}
+            {configured ? "Изменить настройку" : "Настроить агента"}
             <Icon name="arrowRight" size={16} />
           </button>
 
           <p className="config-status" role="status">
             {saved
-              ? "✓ Agent configuration saved"
+              ? "✓ Настройка агента сохранена"
               : dirty
-                ? "Not saved yet. Open Configure Agent to save."
+                ? "Есть несохранённые изменения. Откройте «Настроить агента», чтобы сохранить."
                 : configured
-                  ? "✓ Configured"
+                  ? "✓ Настроен"
                   : ""}
           </p>
 
-          {locked && <p className="profile-hint">End the call to change the configuration.</p>}
+          {locked && <p className="profile-hint">Завершите звонок, чтобы изменить настройки.</p>}
 
           {children}
         </div>

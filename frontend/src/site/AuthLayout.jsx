@@ -18,7 +18,12 @@ const VoiceStage = lazy(() => import("./stage/VoiceStage.jsx"));
 //
 // `working` is true while a request is in flight: the orb is the agent, and it goes from breathing
 // to "thinking".
-export default function AuthLayout({ working = false, title = "Voice in. Work done.", text = "Your agents are listening, and every call they take is waiting for you here.", children }) {
+export default function AuthLayout({
+  working = false,
+  title = "Говорит — и делает.",
+  text = "Ваши агенты уже на линии, а каждый их звонок ждёт вас здесь.",
+  children,
+}) {
   const voiceStage = useVoiceStage();
   const artRef = useRef(null);
 
@@ -33,7 +38,7 @@ export default function AuthLayout({ working = false, title = "Voice in. Work do
       <Link to="/" transition className="lp-brand signin-brand">
         <Logo />
         <span>
-          <b>Real-Time</b> Voice Agent
+          <b>АО «Портал»</b> Голосовые ИИ-агенты
         </span>
       </Link>
 

@@ -1,26 +1,26 @@
 import Icon from "./Icon";
 import { flowStep } from "../../runtime/callRecord.js";
-import { formatDateTime, formatTime } from "../../runtime/format.js";
+import { LOCALE, formatDateTime, formatTime } from "../../runtime/format.js";
 
-const STEPS = ["Configure", "Start Conversation", "Complete Call", "Review Summary"];
+const STEPS = ["Настроить", "Начать разговор", "Завершить звонок", "Изучить итоги"];
 
 const BADGE = {
-  idle: ["Not started", "badge-idle"],
-  live: ["Live", "badge-info"],
-  summarizing: ["Summarizing", "badge-info"],
-  completed: ["Call Completed", "badge-ok"],
-  unavailable: ["No summary", "badge-warn"],
+  idle: ["Не начат", "badge-idle"],
+  live: ["Идёт", "badge-info"],
+  summarizing: ["Формируется итог", "badge-info"],
+  completed: ["Звонок завершён", "badge-ok"],
+  unavailable: ["Нет итогов", "badge-warn"],
 };
 
 const VIEWS = [
-  ["summary", "Summary"],
-  ["transcript", "Transcript"],
-  ["audit", "Audit trail"],
+  ["summary", "Итоги"],
+  ["transcript", "Расшифровка"],
+  ["audit", "Журнал"],
 ];
 
 function Flow({ step }) {
   return (
-    <ol className="flow" aria-label="Call workflow">
+    <ol className="flow" aria-label="Этапы звонка">
       {STEPS.map((name, index) => (
         <li key={name} className={index < step ? "is-done" : index === step ? "is-current" : ""}>
           <span className="flow-dot">{index < step ? <Icon name="check" size={12} /> : index + 1}</span>
@@ -37,19 +37,19 @@ function Empty({ record, onConfigure }) {
   if (status === "live") {
     return (
       <p className="summary-empty">
-        The conversation with {agent.agentName} is in progress. The summary is written when the call ends.
+        Разговор с агентом «{agent.agentName}» ещё идёт. Итоги будут сформированы после завершения звонка.
       </p>
     );
   }
 
   if (status === "summarizing") {
-    return <p className="summary-empty">Writing the call summary...</p>;
+    return <p className="summary-empty">Формируем итоги звонка...</p>;
   }
 
   if (status === "unavailable") {
     return (
       <p className="summary-empty">
-        {record.error ?? "No call summary is available for this call."} Start a new conversation to try again.
+        {record.error ?? "По этому звонку нет доступных итогов."} Начните новый разговор, чтобы повторить попытку.
       </p>
     );
   }
@@ -58,13 +58,13 @@ function Empty({ record, onConfigure }) {
     <div className="summary-empty">
       <p>
         {agent.configured
-          ? `${agent.agentName} is configured as ${agent.role}. Start a conversation and its summary will appear here when the call ends.`
-          : `No agent is configured yet, so calls use the built-in ${agent.agentName} defaults. Configure an agent to say what it should do.`}
+          ? `Агент «${agent.agentName}» настроен на роль «${agent.role}». Начните разговор, и его итоги появятся здесь после завершения звонка.`
+          : `Агент ещё не настроен, поэтому звонки используют встроенные настройки «${agent.agentName}». Настройте агента, чтобы задать его поведение.`}
       </p>
 
       {!agent.configured && (
         <button type="button" className="config-open summary-configure" onClick={onConfigure}>
-          Configure Agent
+          Настроить агента
           <Icon name="arrowRight" size={16} />
         </button>
       )}
@@ -73,14 +73,14 @@ function Empty({ record, onConfigure }) {
 }
 
 function Transcript({ transcript }) {
-  if (!transcript.length) return <p className="summary-empty">This call has no transcript.</p>;
+  if (!transcript.length) return <p className="summary-empty">По этому звонку нет расшифровки.</p>;
 
   return (
     <ol className="detail-list">
       {transcript.map((message) => (
         <li key={message.id}>
           <span>{message.time}</span>
-          <strong>{message.speaker}</strong>
+          <strong>{message.speaker === "Agent" ? "Агент" : "Вы"}</strong>
           {message.text}
         </li>
       ))}
@@ -89,13 +89,13 @@ function Transcript({ transcript }) {
 }
 
 function Audit({ audit }) {
-  if (!audit.length) return <p className="summary-empty">This call has no audit events.</p>;
+  if (!audit.length) return <p className="summary-empty">По этому звонку нет событий журнала.</p>;
 
   return (
     <ol className="detail-list">
       {audit.map((event, index) => (
         <li key={index}>
-          <span>{new Date(event.at).toLocaleTimeString("en-GB")}</span>
+          <span>{new Date(event.at).toLocaleTimeString(LOCALE)}</span>
           <strong>{event.type}</strong>
           {event.tool ?? event.direction ?? event.text ?? ""}
         </li>
@@ -132,8 +132,8 @@ export default function CallSummary({ record, configured, view, onViewChange, on
         </span>
 
         <div>
-          <h3 id="call-summary-title">Call Summary</h3>
-          <p>Summary of the conversation between you and the agent.</p>
+          <h3 id="call-summary-title">Итоги звонка</h3>
+          <p>Кратко о том, что обсуждалось с агентом и что было сделано.</p>
         </div>
 
         <span className={`status-badge ${badgeClass}`}>{badgeText}</span>
@@ -152,7 +152,7 @@ export default function CallSummary({ record, configured, view, onViewChange, on
           <ul className="call-headline-meta">
             <li>
               <Icon name="calendar" size={15} />
-              {record.startedAt ? formatDateTime(record.startedAt) : "Not started"}
+              {record.startedAt ? formatDateTime(record.startedAt) : "Не начат"}
             </li>
             <li>
               <Icon name="clock" size={15} />
@@ -167,7 +167,7 @@ export default function CallSummary({ record, configured, view, onViewChange, on
       </div>
 
       {completed && (
-        <div className="summary-tabs" role="tablist" aria-label="Call record view">
+        <div className="summary-tabs" role="tablist" aria-label="Представление записи звонка">
           {VIEWS.map(([id, name]) => (
             <button
               key={id}
@@ -190,11 +190,11 @@ export default function CallSummary({ record, configured, view, onViewChange, on
 
       {shown === "summary" && completed && (
         <>
-          <Section icon="document" title="Conversation Summary">
+          <Section icon="document" title="Итоги разговора">
             <p className="summary-text">{record.summaryText}</p>
           </Section>
 
-          <Section icon="tag" title="Key Topics Discussed">
+          <Section icon="tag" title="Обсуждённые темы">
             {record.topics.length ? (
               <ul className="topic-chips">
                 {record.topics.map((topic) => (
@@ -202,11 +202,11 @@ export default function CallSummary({ record, configured, view, onViewChange, on
                 ))}
               </ul>
             ) : (
-              <p className="summary-empty">No topics came up in this call.</p>
+              <p className="summary-empty">В этом звонке темы не поднимались.</p>
             )}
           </Section>
 
-          <Section icon="check" title="Actions / Outcome">
+          <Section icon="check" title="Действия и результат">
             <ul className="check-list">
               {record.actions.map((action) => (
                 <li key={action}>
@@ -220,7 +220,7 @@ export default function CallSummary({ record, configured, view, onViewChange, on
 
             {record.nextSteps.length > 0 && (
               <>
-                <h5>Follow-up / Next Steps</h5>
+                <h5>Дальнейшие шаги</h5>
                 <ul className="plain-list">
                   {record.nextSteps.map((step) => (
                     <li key={step}>{step}</li>

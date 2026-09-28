@@ -57,7 +57,7 @@ const PATH_FOR_VIEW = {
 const DEFAULT_THEME = "dark";
 
 // The product is not tied to one industry, so the header does not name one.
-const TAGLINE = "One Voice Engine. Any Role. Any Domain.";
+const TAGLINE = "Один голосовой движок. Любая роль. Любая отрасль.";
 
 export default function OperatorConsole() {
   const { user, signOut } = useAuth();
@@ -99,7 +99,9 @@ export default function OperatorConsole() {
   // call starts on its summary again.
   const [recordView, setRecordView] = useState({ callId: null, view: "summary" });
 
-  const serverBrain = agent.brain.source === "server";
+  // LiveKit and the server brain both mean "there is a backend behind this". Only the
+  // local rules engine means there is not.
+  const serverBrain = agent.brain.available;
 
   useEffect(() => {
     let cancelled = false;
@@ -199,7 +201,7 @@ export default function OperatorConsole() {
     } catch (error) {
       // Nothing here pretends the save worked: the dialog stays open, with what the operator
       // typed still in it, and says why.
-      setConfigSaveError(error.message || "Could not save the agent configuration.");
+      setConfigSaveError(error.message || "Не удалось сохранить настройку агента.");
     } finally {
       setConfigSaving(false);
     }
@@ -295,7 +297,7 @@ export default function OperatorConsole() {
           <button
             type="button"
             className="sidebar-backdrop"
-            aria-label="Close navigation"
+            aria-label="Закрыть навигацию"
             onClick={() => setNavOpen(false)}
           />
         )}
@@ -317,7 +319,7 @@ export default function OperatorConsole() {
         {view === "history" && (
           <main key={view} className="view-frame history-main">
             <CallHistory
-              serverAvailable={agent.brain.source === "server"}
+              serverAvailable={agent.brain.available}
               telephony={Boolean(agent.brain.telephony)}
               profiles={PROFILES}
             />
@@ -340,8 +342,8 @@ export default function OperatorConsole() {
           <main key={view} className="view-frame history-main">
             <SectionPlaceholder
               icon="applications"
-              title="Applications"
-              description="The applications your voice agent is connected to will be listed here."
+              title="Заявки"
+              description="Здесь будут перечислены заявки, к которым подключён ваш голосовой агент."
             />
           </main>
         )}
@@ -350,8 +352,8 @@ export default function OperatorConsole() {
           <main key={view} className="view-frame history-main">
             <SectionPlaceholder
               icon="analytics"
-              title="Analytics"
-              description="Call volume, outcomes and duration trends will be shown here."
+              title="Аналитика"
+              description="Здесь будут показаны объём звонков, результаты и динамика длительности."
             />
           </main>
         )}
@@ -398,6 +400,8 @@ export default function OperatorConsole() {
                 onReset={agent.reset}
                 onViewHistory={() => navigate("history")}
                 acting={Boolean(agent.messages.at(-1)?.toolCalls?.length) && isActive}
+                needsAudio={agent.needsAudio}
+                onUnlockAudio={agent.unlockAudio}
               />
             </div>
 

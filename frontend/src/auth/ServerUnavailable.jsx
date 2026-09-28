@@ -12,20 +12,24 @@ export default function ServerUnavailable() {
     <div className="gate" role="alert">
       <div className="gate-card">
         <Logo size={28} />
-        <h1>We can't reach the server</h1>
-        <p>{error ?? "Something went wrong while checking your session."} Check that the backend is running, then try again.</p>
+        <h1>Не удалось связаться с сервером</h1>
+        <p>
+          {error ?? "Что-то пошло не так при проверке сессии."} Убедитесь, что сервер запущен, и попробуйте
+          снова.
+        </p>
 
         <div className="gate-actions">
           <button type="button" className="gate-btn gate-btn--primary" onClick={retry}>
-            Try again
+            Попробовать снова
           </button>
           <button type="button" className="gate-btn" onClick={enterOffline}>
-            Continue offline
+            Продолжить без сервера
           </button>
         </div>
 
         <small>
-          Offline mode runs the voice console in this browser only: no sign-in, no saved calls. <Link to="/">Back to the site</Link>
+          Офлайн-режим запускает голосовую консоль только в этом браузере: без входа и без сохранённых
+          звонков. <Link to="/">Вернуться на сайт</Link>
         </small>
       </div>
     </div>

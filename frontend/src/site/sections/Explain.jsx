@@ -5,17 +5,17 @@ import SiteIcon from "../icons.jsx";
 import "./Explain.css";
 
 const STATEMENT =
-  "Businesses build AI voice agents that talk with people in real time, understand what they need, and complete the task.";
+  "Компании создают голосовых ИИ-агентов, которые в реальном времени разговаривают с людьми, понимают их потребности и выполняют задачу.";
 
 // The seven beats of one conversation, in order. Each is lit by scroll.
 const FLOW = [
-  { icon: "user", label: "User", note: "Someone calls, or opens a link." },
-  { icon: "waves", label: "Voice conversation", note: "They simply talk. No menus, no forms." },
-  { icon: "agent", label: "AI agent", note: "Your configured agent picks up." },
-  { icon: "ear", label: "Understands", note: "What they want, and who is asking." },
-  { icon: "branch", label: "Decides", note: "The right answer, or the right action." },
-  { icon: "bolt", label: "Takes action", note: "Books, checks, updates, follows up." },
-  { icon: "check", label: "Task completed", note: "Outcome recorded and sent on." },
+  { icon: "user", label: "Человек", note: "Кто-то звонит или открывает ссылку." },
+  { icon: "waves", label: "Разговор", note: "Он просто говорит. Никаких меню и форм." },
+  { icon: "agent", label: "ИИ-агент", note: "На линию выходит ваш настроенный агент." },
+  { icon: "ear", label: "Понимает", note: "Что нужно человеку и кто с ним говорит." },
+  { icon: "branch", label: "Решает", note: "Какой ответ или какое действие уместны." },
+  { icon: "bolt", label: "Действует", note: "Записывает, проверяет, обновляет, перезванивает." },
+  { icon: "check", label: "Задача выполнена", note: "Результат зафиксирован и передан дальше." },
 ];
 
 const WORDS = STATEMENT.split(" ");
@@ -41,7 +41,7 @@ export default function Explain() {
       <div className="explain-pin">
         <div className="lp-wrap explain-inner">
           <p className="lp-eyebrow">
-            <b>02</b> What it is
+            <b>02</b> Что это
           </p>
 
           <h2 className="explain-statement" aria-label={STATEMENT}>
@@ -57,7 +57,7 @@ export default function Explain() {
               <i />
             </div>
 
-            <ol ref={flowRef} className="flow" aria-label="From a conversation to a completed task">
+            <ol ref={flowRef} className="flow" aria-label="От разговора к выполненной задаче">
               {FLOW.map((step, index) => (
                 <li key={step.label} style={{ "--s": (FIRST_NODE + (index / FLOW.length) * (LAST_NODE - FIRST_NODE)).toFixed(3) }}>
                   <span className="flow-index">{String(index + 1).padStart(2, "0")}</span>

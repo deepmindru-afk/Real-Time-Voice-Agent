@@ -9,8 +9,8 @@ import Arrow from "./Arrow.jsx";
 import AuthLayout from "./AuthLayout.jsx";
 import { withNext } from "./withNext.js";
 
-const ART_TITLE = "Your first agent starts here.";
-const ART_TEXT = "Create your workspace, describe the job, and your agent is ready to try.";
+const ART_TITLE = "Первый агент начинается здесь.";
+const ART_TEXT = "Создайте рабочее пространство, опишите задачу — и агент готов к работе.";
 
 // Creating an account: a workspace name, an email and a password. The server creates the account
 // together with a workspace of its own, signs it in, and this screen follows the auth STATUS to the
@@ -63,7 +63,7 @@ export default function SignUp() {
     }
   };
 
-  if (decision.kind === "redirect") return <Splash label="Setting up your workspace" />;
+  if (decision.kind === "redirect") return <Splash label="Настраиваем рабочее пространство" />;
 
   const initializing = status === "initializing";
   const open = status === "open";
@@ -74,57 +74,57 @@ export default function SignUp() {
   return (
     <AuthLayout working={pending} title={ART_TITLE} text={ART_TEXT}>
       <p className="lp-eyebrow">
-        <span className="live-dot" aria-hidden="true" /> {open ? "Open workspace" : closed ? "Sign-up closed" : "Get started"}
+        <span className="live-dot" aria-hidden="true" /> {open ? "Открытое рабочее пространство" : closed ? "Регистрация закрыта" : "Начнём"}
       </p>
 
       {open ? (
         <>
-          <h1>No account needed</h1>
+          <h1>Аккаунт не нужен</h1>
 
           <p className="signin-lead">
-            {backend.reachable ? "This server has sign-in turned off, so the workspace is open." : "You chose to work offline, so the console runs on this device only."}
+            {backend.reachable ? "На этом сервере вход отключён, поэтому рабочее пространство открыто." : "Вы выбрали работу без сервера, поэтому консоль работает только на этом устройстве."}
           </p>
 
           <Link to="/app/dashboard" transition className="lp-btn lp-btn--primary signin-submit">
-            Open the workspace <Arrow />
+            Открыть рабочее пространство <Arrow />
           </Link>
         </>
       ) : closed ? (
         <>
-          <h1>Sign-up is closed</h1>
+          <h1>Регистрация закрыта</h1>
 
-          <p className="signin-lead">New accounts can't be created on this server right now. Ask your workspace administrator to add you, or sign in if you already have an account.</p>
+          <p className="signin-lead">Сейчас на этом сервере нельзя создать новый аккаунт. Попросите администратора рабочего пространства добавить вас или войдите, если аккаунт уже есть.</p>
 
           <Link to={withNext("/signin", search)} transition className="lp-btn lp-btn--primary signin-submit">
-            Sign in <Arrow />
+            Войти <Arrow />
           </Link>
         </>
       ) : (
         <>
-          <h1>Create your account</h1>
+          <h1>Создание аккаунта</h1>
 
-          <p className="signin-lead">Name your workspace and sign up with your email. You will be signed in straight away.</p>
+          <p className="signin-lead">Назовите рабочее пространство и зарегистрируйтесь по почте. Вход произойдёт сразу.</p>
 
           {unavailable && (
             <div className="signin-banner" role="alert">
               <p>
-                <b>We can't reach the server.</b> {serverError}
+                <b>Не удалось связаться с сервером.</b> {serverError}
               </p>
 
               <span>
                 <button type="button" onClick={retry}>
-                  Try again
+                  Попробовать снова
                 </button>
 
                 <button type="button" onClick={enterOffline}>
-                  Continue offline
+                  Продолжить без сервера
                 </button>
               </span>
             </div>
           )}
 
           <form className="signin-form" onSubmit={submit} noValidate>
-            <label htmlFor="su-workspace">Workspace name</label>
+            <label htmlFor="su-workspace">Название рабочего пространства</label>
 
             <input
               id="su-workspace"
@@ -144,7 +144,7 @@ export default function SignUp() {
               </p>
             )}
 
-            <label htmlFor="su-email">Email</label>
+            <label htmlFor="su-email">Электронная почта</label>
 
             <input
               id="su-email"
@@ -162,7 +162,7 @@ export default function SignUp() {
               </p>
             )}
 
-            <label htmlFor="su-password">Password</label>
+            <label htmlFor="su-password">Пароль</label>
 
             <span className="signin-password">
               <input
@@ -176,8 +176,8 @@ export default function SignUp() {
                 required
               />
 
-              <button type="button" onClick={() => setShow(!show)} aria-label={show ? "Hide password" : "Show password"}>
-                {show ? "Hide" : "Show"}
+              <button type="button" onClick={() => setShow(!show)} aria-label={show ? "Скрыть пароль" : "Показать пароль"}>
+                {show ? "Скрыть" : "Показать"}
               </button>
             </span>
             {errors.password ? (
@@ -186,24 +186,25 @@ export default function SignUp() {
               </p>
             ) : (
               <p className="signin-hint" id="su-password-hint">
-                At least {MIN_PASSWORD_LENGTH} characters. A short phrase works well.
+                Минимум {MIN_PASSWORD_LENGTH} символов. Подойдёт короткая фраза.
               </p>
             )}
 
             {failure && (
               <p className="signin-error" role="alert">
                 {failure.message}{" "}
-                {failure.taken && <Link to={withNext("/signin", search)}>Sign in instead</Link>}
+                {failure.taken && <Link to={withNext("/signin", search)}>Войти вместо этого</Link>}
               </p>
             )}
 
             <button className="lp-btn lp-btn--primary signin-submit" type="submit" disabled={pending || initializing}>
-              {pending ? "Creating account…" : initializing ? "Connecting…" : "Create account"} {!pending && !initializing && <Arrow />}
+              {pending ? "Создаём аккаунт…" : initializing ? "Соединение…" : "Создать аккаунт"}{" "}
+              {!pending && !initializing && <Arrow />}
             </button>
           </form>
 
           <p className="signin-foot">
-            Already have an account? <Link to={withNext("/signin", search)}>Sign in</Link>. <Link to="/">Back to the site</Link>
+            Уже есть аккаунт? <Link to={withNext("/signin", search)}>Войти</Link>. <Link to="/">Вернуться на сайт</Link>
           </p>
         </>
       )}

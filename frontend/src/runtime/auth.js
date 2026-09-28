@@ -1,14 +1,14 @@
 import { ApiError, post } from "./api.js";
 
 // How long a sign-in or sign-out request may take before we stop waiting. Without a limit, a
-// server that accepts the connection and never answers would leave "Signing in…" on screen forever.
+// server that accepts the connection and never answers would leave "Входим…" on screen forever.
 export const AUTH_TIMEOUT_MS = 15000;
 
 const timeout = () => ({ signal: AbortSignal.timeout(AUTH_TIMEOUT_MS) });
 
-const rateLimited = (error) => `Too many attempts. Try again in ${error.retryAfter ?? "a few"} seconds.`;
-const SERVER_PROBLEM = "The server had a problem. Try again in a moment.";
-const UNREACHABLE = "Could not reach the server.";
+const rateLimited = (error) => `Слишком много попыток. Повторите через ${error.retryAfter ?? "несколько"} секунд.`;
+const SERVER_PROBLEM = "На сервере возникла ошибка. Попробуйте чуть позже.";
+const UNREACHABLE = "Не удалось связаться с сервером.";
 
 // What to tell the person when email + password sign-in did not work. Rate limits and bad
 // credentials get their own words; anything the server explained (a 4xx detail) is passed on; a
@@ -17,8 +17,8 @@ const UNREACHABLE = "Could not reach the server.";
 function loginMessage(error) {
   if (!(error instanceof ApiError)) return UNREACHABLE;
   if (error.status === 429) return rateLimited(error);
-  if (error.status === 401) return "Invalid email or password.";
-  if (error.status === 422) return "Check the email and password and try again.";
+  if (error.status === 401) return "Неверная почта или пароль.";
+  if (error.status === 422) return "Проверьте почту и пароль и попробуйте снова.";
   if (error.status >= 500) return SERVER_PROBLEM;
 
   return error.message;
@@ -28,10 +28,10 @@ function loginMessage(error) {
 // into words for a person. Keyed by the server's own `detail`, lower-cased. The server uses the
 // same status (401) for the first three, so the status alone cannot tell them apart.
 const GOOGLE_REASONS = {
-  "invalid google credential": "Google could not verify that sign-in. Please try again.",
-  "google account email is not verified": "The email address on this Google account is not verified.",
-  "google account is not authorized": "This Google account is not authorized. Ask your workspace administrator to add it.",
-  "google sign-in is not configured": "Google sign-in is not set up on this server.",
+  "invalid google credential": "Google не смог подтвердить вход. Попробуйте снова.",
+  "google account email is not verified": "Адрес электронной почты в этом аккаунте Google не подтверждён.",
+  "google account is not authorized": "Этот аккаунт Google не авторизован. Попросите администратора рабочего пространства добавить его.",
+  "google sign-in is not configured": "Вход через Google не настроен на этом сервере.",
 };
 
 function googleMessage(error) {
@@ -53,9 +53,9 @@ function googleMessage(error) {
 function signupMessage(error) {
   if (!(error instanceof ApiError)) return UNREACHABLE;
   if (error.status === 429) return rateLimited(error);
-  if (error.status === 409) return "An account with this email already exists.";
-  if (error.status === 404 || error.status === 405) return "Sign-up is not available on this server.";
-  if (error.status === 422) return error.message === "Request failed" ? "Check the details and try again." : error.message;
+  if (error.status === 409) return "Аккаунт с такой почтой уже существует.";
+  if (error.status === 404 || error.status === 405) return "Регистрация недоступна на этом сервере.";
+  if (error.status === 422) return error.message === "Запрос завершился ошибкой" ? "Проверьте данные и попробуйте снова." : error.message;
   if (error.status >= 500) return SERVER_PROBLEM;
 
   return error.message; // includes 403 "Sign-up is not open on this server"
@@ -81,7 +81,7 @@ async function signInRequest(path, body, messageFor) {
     // not JSON: handled as an unusable reply below
   }
 
-  if (!user) throw new Error("The server sent an unexpected reply.");
+  if (!user) throw new Error("Сервер прислал неожиданный ответ.");
 
   return user;
 }

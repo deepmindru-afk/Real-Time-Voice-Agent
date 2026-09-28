@@ -1,7 +1,7 @@
-import { findRef, listSentence, makeGreeting, rupees } from "./shared.js";
+import { findRef, listSentence, makeGreeting, rubles } from "./shared.js";
 
 function resolveApplication(data, text) {
-  const id = findRef(text, "APP") ?? data.currentId;
+  const id = findRef(text, "ЗАЯВ") ?? data.currentId;
 
   return { id, application: data.applications[id] };
 }
@@ -9,93 +9,89 @@ function resolveApplication(data, text) {
 const notFound = (id) => ({
   args: { application_id: id },
   result: { found: false },
-  reply: `I couldn't find an application ${id} in the system, so I won't guess. Could you check the number?`,
+  reply: `Я не нашёл заявку ${id} в системе и не буду ничего додумывать. Проверьте, пожалуйста, номер.`,
 });
 
 export default {
   id: "underwriting",
-  name: "Credit Underwriting",
-  vertical: "Credit",
-  workspaceLabel: "Credit Underwriting Workspace",
-  counterparty: "underwriter",
+  name: "Анкетирование и лизинг",
+  vertical: "Финансы",
+  workspaceLabel: "Рабочее пространство анкетирования",
+  counterparty: "заявителя",
 
-  headline: "How can I help you today?",
+  headline: "Чем могу помочь?",
   description:
-    "Speak naturally with the AI voice agent about any application, financials, risks, or review.",
+    "Обсудите с голосовым ИИ-агентом любую заявку, финансовые показатели, риски или результаты проверки.",
 
   greeting: makeGreeting(
-    "I'm your credit underwriting copilot.",
-    "I'm looking at application APP-1024. Ask me about it, the pending queue or its risk, or ask me to arrange a follow-up call with the applicant."
+    "Я голосовой ассистент по анкетированию АО «Портал».",
+    "Сейчас открыта заявка ЗАЯВ-1024. Спросите о ней, об очереди или о рисках, либо попросите назначить заявителю обратный звонок."
   ),
 
   prompts: [
-    "Show pending applications",
-    "Summarize this applicant",
-    "What are the key risks?",
-    "Which documents are missing?",
-    "Call the applicant",
-    "Show me today's activities",
+    "Покажи заявки в работе",
+    "Кратко о заявителе",
+    "Какие основные риски?",
+    "Какие документы отсутствуют?",
+    "Позвонить заявителю",
+    "Покажи события за сегодня",
   ],
 
   capabilities: [
-    "see pending applications",
-    "summarize an applicant",
-    "explain risk scores",
-    "check missing documents",
-    "arrange follow-up calls",
+    "посмотреть заявки в работе",
+    "кратко описать заявителя",
+    "объяснить оценку риска",
+    "проверить недостающие документы",
+    "назначить обратный звонок",
   ],
 
   nextSteps: [
-    "Verify outstanding documents",
-    "Continue underwriting review",
-    "Confirm the follow-up call took place",
+    "Получить недостающие документы",
+    "Продолжить проверку заявки",
+    "Убедиться, что обратный звонок состоялся",
   ],
 
   data: {
-    currentId: "APP-1024",
+    currentId: "ЗАЯВ-1024",
     applications: {
-      "APP-1024": {
-        applicant: "Ravi Menon",
-        product: "business loan",
+      "ЗАЯВ-1024": {
+        applicant: "Равш Менон",
+        product: "лизинг оборудования",
         amount: 1800000,
-        status: "under financial review",
+        status: "на финансовой проверке",
         riskScore: 0.28,
-        riskBand: "moderate",
-        missingDocs: ["latest bank statement"],
-        riskFactors: [
-          "a debt-to-income ratio of 41 percent",
-          "recent revenue variation",
-          "the pending bank statement",
-        ],
+        riskBand: "умеренный",
+        missingDocs: ["выписка по счёту за последний месяц"],
+        riskFactors: ["отношение долга к доходу 41 процент", "недавняя нестабильность выручки", "непредоставленная выписка"],
         pending: true,
       },
-      "APP-1031": {
-        applicant: "Sneha Kulkarni",
-        product: "home loan",
+      "ЗАЯВ-1031": {
+        applicant: "Снеха Кулкарни",
+        product: "ипотека",
         amount: 4200000,
-        status: "awaiting documents",
+        status: "ожидает документы",
         riskScore: 0.41,
-        riskBand: "elevated",
-        missingDocs: ["PAN verification", "income proof"],
-        riskFactors: ["a short employment history", "two missed card payments last year"],
+        riskBand: "повышенный",
+        missingDocs: ["подтверждение личности", "справка о доходах"],
+        riskFactors: ["короткий трудовой стаж", "два пропущенных платежа по карте за прошлый год"],
         pending: true,
       },
-      "APP-1040": {
-        applicant: "Imran Sheikh",
-        product: "vehicle loan",
+      "ЗАЯВ-1040": {
+        applicant: "Имран Шейх",
+        product: "автокредит",
         amount: 950000,
-        status: "ready for a decision",
+        status: "готов к решению",
         riskScore: 0.19,
-        riskBand: "low",
+        riskBand: "низкий",
         missingDocs: [],
-        riskFactors: ["nothing significant"],
+        riskFactors: ["ничего существенного"],
         pending: false,
       },
     },
     activities: [
-      "09:10, income proof verified on APP-1040",
-      "11:25, document request sent on APP-1031",
-      "13:40, risk score recalculated on APP-1024",
+      "09:10, на ЗАЯВ-1040 подтверждён доход",
+      "11:25, по ЗАЯВ-1031 отправлен запрос документов",
+      "13:40, по ЗАЯВ-1024 пересчитана оценка риска",
     ],
     callJobs: [],
   },
@@ -103,8 +99,8 @@ export default {
   intents: [
     {
       id: "follow_up_call",
-      topic: "Follow-up call",
-      match: /\b(call|phone|ring|schedule|follow[- ]?up)\b/i,
+      topic: "Обратный звонок",
+      match: /\b(звонок|позвонить|позвони|телефон|назначить|обратн(ый|ая)\s+связ(ь|и)|перезвонить)\b|\b(call|phone|ring|schedule|follow[- ]?up)\b/i,
       propose: (data, text) => {
         const { id, application } = resolveApplication(data, text);
 
@@ -115,27 +111,25 @@ export default {
     },
     {
       id: "pending",
-      topic: "Pending applications",
+      topic: "Заявки в работе",
       tool: "list_pending_applications",
-      match: /\b(pending|queue|waiting|outstanding applications)\b/i,
+      match: /\b(в\s+работе|очеред|ожида\w*|необработанн\w*|незавершённ\w*|незавершенн\w*|покажи\s+заявки)\b|\b(pending|queue|waiting|outstanding applications)\b/i,
       run: (data) => {
         const pending = Object.entries(data.applications).filter(([, app]) => app.pending);
-        const parts = pending.map(
-          ([id, app]) => `${id} for ${app.applicant}, ${app.status}`
-        );
+        const parts = pending.map(([id, app]) => `${id} — ${app.applicant}, ${app.status}`);
 
         return {
           args: {},
           result: pending.map(([id, app]) => ({ id, applicant: app.applicant, status: app.status })),
-          reply: `There are ${pending.length} applications pending: ${listSentence(parts)}.`,
+          reply: `В работе ${pending.length} заявки: ${listSentence(parts)}.`,
         };
       },
     },
     {
       id: "risk",
-      topic: "Risk assessment",
+      topic: "Оценка риска",
       tool: "get_risk_factors",
-      match: /\b(risk|risks|score|risky)\b/i,
+      match: /\b(риск|риски|оценк(а|и)|оценка\s+риска|сколько\s+риска|рискован)\w*/i,
       run: (data, text) => {
         const { id, application } = resolveApplication(data, text);
 
@@ -143,21 +137,17 @@ export default {
 
         return {
           args: { application_id: id },
-          result: {
-            risk_score: application.riskScore,
-            band: application.riskBand,
-            factors: application.riskFactors,
-          },
-          reply: `${id} has a risk score of ${application.riskScore}, which is ${application.riskBand} risk. The main factors are ${listSentence(application.riskFactors)}.`,
-          ref: `Application: ${id}`,
+          result: { risk_score: application.riskScore, band: application.riskBand, factors: application.riskFactors },
+          reply: `По заявке ${id} оценка риска составляет ${application.riskScore}, риск ${application.riskBand}. Основные факторы: ${listSentence(application.riskFactors)}.`,
+          ref: `Заявка: ${id}`,
         };
       },
     },
     {
       id: "documents",
-      topic: "Document checklist",
+      topic: "Проверка документов",
       tool: "get_missing_documents",
-      match: /\b(document|documents|missing|statement|checklist)\b/i,
+      match: /\b(документ\w*|не\s+хватает|отсутству\w*|выписк\w*|справк\w*|чек-лист)\b|\b(document|documents|missing|statement|checklist)\b/i,
       run: (data, text) => {
         const { id, application } = resolveApplication(data, text);
 
@@ -169,42 +159,42 @@ export default {
           args: { application_id: id },
           result: { missing },
           reply: missing.length
-            ? `For ${id}, still outstanding: ${listSentence(missing)}.`
-            : `${id} has all required documents on file.`,
-          ref: "Document checklist",
+            ? `По заявке ${id} всё ещё не хватает: ${listSentence(missing)}.`
+            : `По заявке ${id} все необходимые документы получены.`,
+          ref: "Проверка документов",
         };
       },
     },
     {
       id: "activities",
-      topic: "Today's activity",
+      topic: "События за сегодня",
       tool: "get_todays_activity",
-      match: /\b(today|activity|activities|happened)\b/i,
+      match: /\b(сегодня|событи\w*|активност\w*|что\s+произошл\w*)\b|\b(today|activity|activities|happened)\b/i,
       run: (data) => ({
         args: {},
         result: data.activities,
-        reply: `Today so far: ${data.activities.join("; ")}.`,
+        reply: `Сегодня произошло: ${listSentence(data.activities)}.`,
       }),
     },
     {
       id: "summary",
-      topic: "Application summary",
+      topic: "Обзор заявки",
       tool: "get_application",
-      match: /\b(summari[sz]e|summary|applicant|status|application|APP-?\d+|tell me about)\b/i,
+      match: /\b(кратк\w*|резюме|заявител\w*|статус|заявк\w*|ЗАЯВ-?\d+|расскажи)\b|\b(summari[sz]e|summary|applicant|status|application|APP-?\d+|tell me about)\b/i,
       run: (data, text) => {
         const { id, application } = resolveApplication(data, text);
 
         if (!application) return notFound(id);
 
         const docs = application.missingDocs.length
-          ? `Still outstanding: ${listSentence(application.missingDocs)}.`
-          : "All required documents are in.";
+          ? `Всё ещё не хватает: ${listSentence(application.missingDocs)}.`
+          : "Все необходимые документы получены.";
 
         return {
           args: { application_id: id },
           result: application,
-          reply: `${id} is a ${rupees(application.amount)} ${application.product} for ${application.applicant}. It is currently ${application.status}. ${docs} The risk score is ${application.riskScore}, ${application.riskBand} risk.`,
-          ref: `Application: ${id}`,
+          reply: `${id} — это ${rubles(application.amount)} на ${application.product} для ${application.applicant}. Сейчас заявка ${application.status}. ${docs} Оценка риска ${application.riskScore}, риск ${application.riskBand}.`,
+          ref: `Заявка: ${id}`,
         };
       },
     },
@@ -212,18 +202,16 @@ export default {
 
   actions: {
     schedule_followup_call: {
-      label: "Schedule follow-up call",
+      label: "Назначить обратный звонок",
       describe: (args, data) =>
-        `create an outbound follow-up call job to ${data.applications[args.application_id].applicant} about ${args.application_id}`,
+        `создать задачу на исходящий звонок ${data.applications[args.application_id].applicant} по заявке ${args.application_id}`,
       execute: (args, data) => {
         const application = data.applications[args.application_id];
         const job = {
-          job_id: `JOB-${3001 + data.callJobs.length}`,
+          job_id: `ЗВОНОК-${3001 + data.callJobs.length}`,
           applicant: application.applicant,
           application_id: args.application_id,
-          reason: application.missingDocs.length
-            ? `Collect ${listSentence(application.missingDocs)}`
-            : "Status follow-up",
+          reason: application.missingDocs.length ? `Запросить ${listSentence(application.missingDocs)}` : "Уточнить статус",
           profile: "underwriting",
         };
 
@@ -231,9 +219,9 @@ export default {
 
         return {
           result: job,
-          summary: `Outbound call job ${job.job_id} created for ${application.applicant}`,
-          reply: `Done. I've created outbound call job ${job.job_id} to ${application.applicant} regarding ${args.application_id}. The call orchestration service will place the call.`,
-          ref: `Call job: ${job.job_id}`,
+          summary: `Создана задача на исходящий звонок ${job.job_id} для ${application.applicant}`,
+          reply: `Готово. Создана задача на исходящий звонок ${job.job_id} для ${application.applicant} по заявке ${args.application_id}. Сервис телефонных звонков перезвонит.`,
+          ref: `Задача звонка: ${job.job_id}`,
         };
       },
     },

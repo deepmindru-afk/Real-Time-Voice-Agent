@@ -9,18 +9,18 @@ export default function NotFound() {
     <div className="gate">
       <div className="gate-card">
         <Logo size={28} />
-        <h1>Page not found</h1>
-        <p>There is nothing at this address.</p>
+        <h1>Страница не найдена</h1>
+        <p>По этому адресу ничего нет.</p>
         <div className="gate-actions">
           <Link to="/" className="gate-btn gate-btn--primary">
-            Back to the site
+            Вернуться на сайт
           </Link>
           <Link to="/signin" className="gate-btn">
-            Sign in
+            Войти
           </Link>
           {signupOpen && (
             <Link to="/signup" className="gate-btn">
-              Sign up
+              Регистрация
             </Link>
           )}
         </div>

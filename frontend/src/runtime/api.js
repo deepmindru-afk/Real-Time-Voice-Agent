@@ -34,7 +34,11 @@ export async function request(path, options = {}) {
 
   const retry = Number(response.headers.get("retry-after"));
 
-  throw new ApiError(response.status, typeof detail === "string" ? detail : "Request failed", retry || null);
+  throw new ApiError(
+    response.status,
+    typeof detail === "string" ? detail : "Запрос завершился ошибкой",
+    retry || null
+  );
 }
 
 export function post(path, body, options = {}) {

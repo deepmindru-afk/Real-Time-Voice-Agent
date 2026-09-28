@@ -1,70 +1,74 @@
 // What the operator wants the voice agent to do: its use case, role, audience,
 // tasks, tone, language and rules. This is structured data, not display text, so
-// it can be handed to the call (and later to the server brain) as the agent's
-// operating context. It is domain-agnostic: no industry is special.
+// it can be handed to the call (and to the LiveKit token request, which is what
+// picks the agent that joins the room) as the agent's operating context. It is
+// domain-agnostic: no industry is special.
+//
+// Every list here is the choice the operator actually sees, so the Russian is the
+// stored value too - which is what makes the agent's own instructions Russian.
 
-export const OTHER = "Other";
-export const CUSTOM = "Custom";
+export const OTHER = "Другое";
+export const CUSTOM = "Своё";
 
 export const INDUSTRIES = [
-  "Customer Support",
-  "Healthcare",
-  "Education",
-  "Banking & Finance",
-  "Sales",
-  "Mining",
-  "HR / Recruitment",
-  "Receptionist",
-  "Technical Support",
+  "Клиентская поддержка",
+  "Медицина и здоровье",
+  "Образование",
+  "Банки и финансы",
+  "Продажи",
+  "Добыча полезных ископаемых",
+  "Персонал и подбор",
+  "Ресепшен",
+  "Техническая поддержка",
   OTHER,
 ];
 
 export const TARGET_USERS = [
-  "Customers",
-  "Employees",
-  "Students",
-  "Operators",
-  "Patients",
-  "Managers",
-  "General Users",
+  "Клиенты",
+  "Сотрудники",
+  "Студенты",
+  "Операторы",
+  "Пациенты",
+  "Руководители",
+  "Пользователи портала",
 ];
 
 export const TASK_SUGGESTIONS = [
-  "Answer user questions",
-  "Search documents",
-  "Provide information",
-  "Analyze data",
-  "Schedule appointments",
-  "Handle customer requests",
-  "Provide technical guidance",
-  "Generate summaries",
-  "Perform workflow actions",
+  "Отвечать на вопросы пользователей",
+  "Искать по документам",
+  "Предоставлять информацию",
+  "Анализировать данные",
+  "Назначать встречи",
+  "Обрабатывать обращения клиентов",
+  "Давать технические рекомендации",
+  "Формировать краткие отчёты",
+  "Выполнять действия в системах",
 ];
 
 export const BEHAVIORS = [
-  "Professional",
-  "Friendly",
-  "Concise",
-  "Detailed",
-  "Technical",
-  "Conversational",
+  "Профессиональный",
+  "Дружелюбный",
+  "Краткий",
+  "Подробный",
+  "Технический",
+  "Разговорный",
   CUSTOM,
 ];
 
-export const LANGUAGES = ["English", "Hindi", "English + Hindi", OTHER];
+export const LANGUAGES = ["Русский", "Английский", "Русский + английский", OTHER];
 
 // Suggestions only: the role stays free text, so any domain works. Unknown
-// industries (and "Other") simply get no suggestions.
+// industries (and "Другое") simply get no suggestions.
 export const ROLE_SUGGESTIONS = {
-  "Customer Support": ["Customer Support Executive", "Order Support Assistant", "Complaints Handler"],
-  Healthcare: ["Patient Support Assistant", "Appointment Coordinator", "Care Navigator"],
-  Education: ["Student Support Assistant", "Admissions Counsellor", "Course Advisor"],
-  "Banking & Finance": ["Banking Support Assistant", "Loan Enquiry Assistant", "Collections Reminder Agent"],
-  Sales: ["Sales Development Representative", "Product Advisor", "Lead Qualification Assistant"],
-  Mining: ["Mining Operations Support", "Safety Briefing Assistant", "Production Reporting Assistant"],
-  "HR / Recruitment": ["HR Helpdesk Assistant", "Recruitment Screener", "Onboarding Assistant"],
-  Receptionist: ["Virtual Receptionist", "Visitor Coordinator"],
-  "Technical Support": ["Technical Support Engineer", "IT Helpdesk Assistant"],
+  "Клиентская поддержка": ["Специалист поддержки клиентов", "Ассистент по заказам", "Специалист по обращениям"],
+  "Медицина и здоровье": ["Ассистент поддержки пациентов", "Координатор приёма", "Навигатор по медицинским услугам"],
+  Образование: ["Ассистент поддержки абитуриентов", "Консультант по приёму", "Советник по курсам"],
+  "Банки и финансы": ["Ассистент банковской поддержки", "Ассистент по кредитным заявкам", "Агент по напоминаниям о платежах"],
+  Продажи: ["Менеджер по продажам", "Консультант по продукту", "Ассистент квалификации лидов"],
+  "Добыча полезных ископаемых": ["Поддержка добывающих операций", "Ассистент инструктажей по ТБ", "Ассистент оперативной отчётности"],
+  "Персонал и подбор": ["Ассистент отдела кадров", "Скрининг резюме", "Ассистент адаптации"],
+  Ресепшен: ["Виртуальный ресепшен", "Координатор приёма посетителей"],
+  "Техническая поддержка": ["Инженер технической поддержки", "Ассистент ИТ-службы"],
 };
 
 export const LIMITS = {
@@ -91,9 +95,9 @@ export function emptyConfig() {
     domainContext: "",
     conversationBehavior: [],
     behaviorCustom: "",
-    language: "English",
+    language: "Русский",
     languageOther: "",
-    voice: "", // "" means the browser's default voice
+    voice: "", // "" means the server's own default voice for the agent
     additionalInstructions: "",
   };
 }
@@ -150,16 +154,16 @@ export function validateConfig(config) {
   const value = normalizeConfig(config);
   const errors = {};
 
-  if (!value.industry) errors.industry = "Choose the use case or industry.";
-  else if (value.industry === OTHER && !value.industryOther) errors.industryOther = "Describe your use case or industry.";
+  if (!value.industry) errors.industry = "Выберите сценарий применения или отрасль.";
+  else if (value.industry === OTHER && !value.industryOther) errors.industryOther = "Опишите ваш сценарий применения или отрасль.";
 
-  if (!value.agentName) errors.agentName = "Give the agent a name.";
-  if (!value.role) errors.role = "Say what role the agent should perform.";
-  if (!value.purpose) errors.purpose = "Describe what the agent should help users accomplish.";
+  if (!value.agentName) errors.agentName = "Укажите название агента.";
+  if (!value.role) errors.role = "Укажите, какую роль должен выполнять агент.";
+  if (!value.purpose) errors.purpose = "Опишите, что агент должен помочь сделать пользователю.";
 
-  if (value.language === OTHER && !value.languageOther) errors.languageOther = "Enter the language.";
+  if (value.language === OTHER && !value.languageOther) errors.languageOther = "Укажите язык общения.";
   if (value.conversationBehavior.includes(CUSTOM) && !value.behaviorCustom) {
-    errors.behaviorCustom = "Describe the custom behavior, or deselect Custom.";
+    errors.behaviorCustom = "Опишите собственное поведение или снимите выбор «Своё».";
   }
 
   return errors;
@@ -167,8 +171,8 @@ export function validateConfig(config) {
 
 export const isConfigured = (config) => Object.keys(validateConfig(config)).length === 0;
 
-// The flat shape a call (and later the server) reads: "Other" and "Custom"
-// replaced by what the operator actually typed. Null unless the config is valid.
+// The flat shape a call reads: "Другое" and "Своё" replaced by what the operator
+// actually typed. Null unless the config is valid.
 export function resolveConfig(config) {
   if (!isConfigured(config)) return null;
 
@@ -195,13 +199,13 @@ export function sameConfig(a, b) {
   return JSON.stringify(normalizeConfig(a)) === JSON.stringify(normalizeConfig(b));
 }
 
-// --- the backend Agent (Step 18B: app/schemas/agent.py) ---------------------------------------
+// --- the backend Agent ------------------------------------------------------------------------
 //
 // Field mapping (see the Step 18B report for the full audit):
 //
 //   agentName              -> name
 //   role                   -> role
-//   industry/industryOther -> industry          ("Other" resolved to what was typed, like resolveConfig)
+//   industry/industryOther -> industry          ("Другое" resolved to what was typed, like resolveConfig)
 //   purpose                -> purpose
 //   targetUsers            -> target_users
 //   primaryTasks           -> primary_tasks
@@ -213,9 +217,7 @@ export function sameConfig(a, b) {
 //                                                 string, so there is no code to translate to or from)
 //   voice                  -> voice
 //
-// `id`, `organization_id` and `status` are never sent from here: the server decides all three
-// (POST assigns id/organization_id from who is asking; status is set server-side on create - see
-// the Step 18B report for why).
+// `id`, `organization_id` and `status` are never sent from here: the server decides all three.
 
 // The shape POST/PUT /api/agents reads. Null unless the form is valid (same rule as resolveConfig,
 // which this is built on).
@@ -240,14 +242,14 @@ export function toAgentPayload(config) {
 
 // The reverse: an AgentResponse (GET/POST/PUT's JSON body) back into the form's own shape. A
 // stored value that is no longer one of the fixed choices (industry, language, a behavior chip)
-// is not dropped: it round-trips through "Other"/"Custom", exactly as if the operator had just
+// is not dropped: it round-trips through "Другое"/"Своё", exactly as if the operator had just
 // typed it, so nothing saved through this app can ever be silently lost by loading it back.
 export function fromAgentPayload(agent) {
   const storedBehaviors = Array.isArray(agent.behavior_config?.tone) ? agent.behavior_config.tone : [];
   const knownBehaviors = storedBehaviors.filter((item) => BEHAVIORS.includes(item) && item !== CUSTOM);
   const customBehavior = storedBehaviors.find((item) => !BEHAVIORS.includes(item));
   const knownIndustry = INDUSTRIES.includes(agent.industry) ? agent.industry : agent.industry ? OTHER : "";
-  const knownLanguage = LANGUAGES.includes(agent.language) ? agent.language : agent.language ? OTHER : "English";
+  const knownLanguage = LANGUAGES.includes(agent.language) ? agent.language : agent.language ? OTHER : "Русский";
 
   return normalizeConfig({
     industry: knownIndustry,

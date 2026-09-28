@@ -1,6 +1,7 @@
 // The visual states the voice system can present. Everything here is derived
-// from real application state (the call state machine and the microphone), never
-// invented telemetry: the UI only animates what the app actually knows.
+// from real application state (the call state machine, the room and the
+// microphone), never invented telemetry: the UI only animates what the app
+// actually knows.
 
 export const VOICE_STATES = [
   "idle",
@@ -14,7 +15,7 @@ export const VOICE_STATES = [
 ];
 
 // Map the call state machine to a presentation state. An ended call becomes an
-// error only when the transport actually reported one.
+// error only when the room actually reported one.
 export function visualForCallState(callState, callError = false) {
   switch (callState) {
     case "connecting":
@@ -34,12 +35,12 @@ export function visualForCallState(callState, callError = false) {
 }
 
 export const VOICE_STATE_LABEL = {
-  idle: "Ready",
-  connecting: "Connecting…",
-  listening: "Listening",
-  thinking: "Thinking",
-  speaking: "Speaking",
-  connected: "Connected",
-  disconnected: "Disconnected",
-  error: "Error",
+  idle: "Готов",
+  connecting: "Соединение…",
+  listening: "Слушает",
+  thinking: "Думает",
+  speaking: "Говорит",
+  connected: "Подключено",
+  disconnected: "Отключено",
+  error: "Ошибка",
 };

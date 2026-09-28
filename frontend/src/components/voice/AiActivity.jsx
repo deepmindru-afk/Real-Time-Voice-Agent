@@ -2,15 +2,15 @@
 // "understand", thinking is "reason", speaking is "respond", and "act" is on only while the
 // latest agent turn actually carries a tool call. Nothing here is simulated or timed.
 const STAGES = [
-  ["understand", "Understand", ["listening"]],
-  ["reason", "Reason", ["thinking"]],
-  ["respond", "Respond", ["speaking"]],
-  ["act", "Act", []],
+  ["understand", "Понять", ["listening"]],
+  ["reason", "Подумать", ["thinking"]],
+  ["respond", "Ответить", ["speaking"]],
+  ["act", "Действие", []],
 ];
 
 export default function AiActivity({ state = "idle", acting = false, className = "" }) {
   return (
-    <ol className={`ai-activity ${className}`} aria-label="What the agent is doing">
+    <ol className={`ai-activity ${className}`} aria-label="Что делает агент">
       {STAGES.map(([id, label, states]) => {
         const on = id === "act" ? acting : states.includes(state);
 

@@ -66,37 +66,37 @@ export default function ProfileMenu({ user, theme, onToggleTheme, onNavigate, on
         onClick={() => setOpen(!open)}
       >
         <span className="avatar">{email ? email[0].toUpperCase() : <Icon name="user" size={16} />}</span>
-        <span className="profile-name">{email ?? "Local session"}</span>
+        <span className="profile-name">{email ?? "Локальная сессия"}</span>
         <Icon name="chevronDown" size={16} />
       </button>
 
       {open && (
-        <div className="profile-dropdown" id={menuId} role="menu" aria-label="Account">
+        <div className="profile-dropdown" id={menuId} role="menu" aria-label="Аккаунт">
           <div className="profile-dropdown-head">
-            <strong>{email ?? "Local session"}</strong>
-            <span>{email ? role : "Not signed in (offline mode)"}</span>
+            <strong>{email ?? "Локальная сессия"}</strong>
+            <span>{email ? role : "Вы не вошли (офлайн-режим)"}</span>
           </div>
 
           <button type="button" role="menuitem" onClick={choose(() => onNavigate("profile"))}>
             <Icon name="user" size={18} />
-            Profile
+            Профиль
           </button>
 
           <button type="button" role="menuitem" onClick={choose(() => onNavigate("settings"))}>
             <Icon name="settings" size={18} />
-            Settings
+            Настройки
           </button>
 
           <button type="button" role="menuitem" onClick={choose(onToggleTheme)}>
             <Icon name={isDark ? "moon" : "sun"} size={18} />
-            Appearance
-            <span className="profile-item-hint">{isDark ? "Dark" : "Light"}</span>
+            Оформление
+            <span className="profile-item-hint">{isDark ? "Тёмная" : "Светлая"}</span>
           </button>
 
           {onSignOut && (
             <button type="button" role="menuitem" className="profile-signout" onClick={choose(onSignOut)}>
               <Icon name="signOut" size={18} />
-              Sign Out
+              Выйти
             </button>
           )}
         </div>

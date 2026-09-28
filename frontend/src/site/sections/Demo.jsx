@@ -12,21 +12,21 @@ import "./Demo.css";
 const TIMELINE = buildTimeline(DEMO_SCRIPT);
 
 const STATUS_LABEL = {
-  idle: "Ready",
-  listening: "Listening",
-  thinking: "Thinking",
-  speaking: "Speaking",
-  acting: "Working",
-  done: "Complete",
+  idle: "Готов",
+  listening: "Слушает",
+  thinking: "Думает",
+  speaking: "Говорит",
+  acting: "Работает",
+  done: "Готово",
 };
 
 const ORB_MODE = { idle: "idle", listening: "listening", thinking: "thinking", speaking: "speaking", acting: "thinking", done: "idle" };
 
 const LEGEND = [
-  ["listening", "It hears you, live."],
-  ["thinking", "It works out what you mean."],
-  ["acting", "It checks and does, with your data."],
-  ["speaking", "It answers in a natural voice."],
+  ["listening", "Слышит вас в реальном времени."],
+  ["thinking", "Разбирает, что вы имеете в виду."],
+  ["acting", "Проверяет и выполняет — по вашим данным."],
+  ["speaking", "Отвечает естественным голосом."],
 ];
 
 const clock = (ms) => {
@@ -72,9 +72,9 @@ function Message({ entry }) {
 
   return (
     <div className={`msg ${isAgent ? "msg--agent" : "msg--user"}`}>
-      <span className="msg-who">{isAgent ? "Agent" : "Caller"}</span>
+      <span className="msg-who">{isAgent ? "Агент" : "Звонящий"}</span>
       {phase === "lead" ? (
-        <p className="msg-dots" aria-label={isAgent ? "Thinking" : "Listening"}>
+        <p className="msg-dots" aria-label={isAgent ? "Думает" : "Слушает"}>
           <i />
           <i />
           <i />
@@ -131,14 +131,14 @@ export default function Demo() {
       <div className="lp-wrap demo-grid">
         <div className="demo-copy">
           <p className="lp-eyebrow">
-            <b>03</b> Live demo
+            <b>03</b> Живая демонстрация
           </p>
           <h2 className="lp-h2">
-            Listen to it <em>work.</em>
+            Послушайте, как он <em>работает.</em>
           </h2>
-          <p className="lp-lead">One appointment, start to finish. It listens, understands, checks the calendar, asks before it books, and confirms. All in one natural conversation.</p>
+          <p className="lp-lead">Одна запись к врачу, от начала до конца. Он слушает, понимает, проверяет расписание, спрашивает перед записью и подтверждает результат. Всё это — в одном естественном разговоре.</p>
 
-          <ul className="demo-legend" aria-label="What the agent is doing">
+          <ul className="demo-legend" aria-label="Что делает агент">
             {LEGEND.map(([status, text]) => (
               <li key={status} className={frame.status === status ? "is-on" : ""}>
                 <i aria-hidden="true" />
@@ -150,17 +150,17 @@ export default function Demo() {
 
           <OrbAnchor name="demo" className="demo-orb" />
 
-          <p className="demo-note">A scripted illustration of one call. Your agent works from your own data and rules.</p>
+          <p className="demo-note">Сценарная иллюстрация одного звонка. Ваш агент работает по вашим собственным данным и правилам.</p>
         </div>
 
-        <div className={`demo-card is-${frame.status}`} role="group" aria-label="Simulated call between a caller and the voice agent">
+        <div className={`demo-card is-${frame.status}`} role="group" aria-label="Имитация звонка между звонящим и голосовым агентом">
           <header className="demo-head">
             <span className="demo-avatar">
               <Logo size={20} />
             </span>
             <span className="demo-who">
-              <b>Front-desk agent</b>
-              <span>Inbound call · appointments</span>
+              <b>Ассистент на ресепшене</b>
+              <span>Входящий звонок · запись на приём</span>
             </span>
             <span className="demo-status" role="status">
               <i aria-hidden="true" />
@@ -170,7 +170,7 @@ export default function Demo() {
           </header>
 
           <div className="demo-thread" ref={threadRef} aria-live="off">
-            {frame.shown.length === 0 && <p className="demo-empty">Incoming call…</p>}
+            {frame.shown.length === 0 && <p className="demo-empty">Входящий звонок…</p>}
             {frame.shown.map((entry) => (
               <Message key={entry.index} entry={entry} />
             ))}
@@ -182,7 +182,7 @@ export default function Demo() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v4h4" />
               </svg>
-              Replay
+              Повторить
             </button>
           </footer>
         </div>

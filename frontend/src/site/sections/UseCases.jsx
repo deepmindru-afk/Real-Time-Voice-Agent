@@ -10,44 +10,44 @@ const CASES = [
   {
     id: "calls",
     icon: "phone",
-    title: "Customer calls",
-    text: "Agents that answer and hold real conversations. Natural back-and-forth, interruptions welcome.",
-    points: ["Speaks and listens at the same time", "Hands over when it should", "Every call summarised"],
+    title: "Входящие звонки",
+    text: "Агенты, которые отвечают и ведут настоящий разговор. Живой диалог, перебивания допустимы.",
+    points: ["Говорит и слушает одновременно", "Передаёт диалог, когда нужно", "По каждому звонку — итоги"],
   },
   {
     id: "schedule",
     icon: "calendar",
-    title: "Appointment scheduling",
-    text: "Finds a time that works, confirms it with the person, and only then books it.",
-    points: ["Checks availability live", "Confirms before it changes anything", "Handles reschedules"],
+    title: "Запись на приём",
+    text: "Находит подходящее время, подтверждает его с человеком и только потом записывает.",
+    points: ["Проверяет занятость в реальном времени", "Спрашивает перед любым изменением", "Обрабатывает переносы"],
   },
   {
     id: "reminders",
     icon: "bell",
-    title: "Reminders",
-    text: "Reaches out ahead of the moments that matter: appointments, payments, renewals.",
-    points: ["Triggered by dates on the contact", "Respects consent and call windows", "Confirms it was heard"],
+    title: "Напоминания",
+    text: "Связывается заранее с важными событиями: приёмами, платежами, продлением.",
+    points: ["Срабатывает по дате из карточки", "Учитывает согласие и часы связи", "Подтверждает, что его услышали"],
   },
   {
     id: "notifications",
     icon: "broadcast",
-    title: "Notifications",
-    text: "Delivers important information by voice, and checks the person understood it.",
-    points: ["Phone or web link", "One message, many people", "Outcome recorded per call"],
+    title: "Оповещения",
+    text: "Передаёт важную информацию голосом и проверяет, что её действительно поняли.",
+    points: ["Телефон или ссылка в браузере", "Одно сообщение — много людей", "Результат фиксируется по каждому звонку"],
   },
   {
     id: "leads",
     icon: "funnel",
-    title: "Lead qualification",
-    text: "Talks to prospects, asks the questions that matter, and records what it learns.",
-    points: ["Your questions, your criteria", "Structured answers, not notes", "Hot leads flagged"],
+    title: "Квалификация лидов",
+    text: "Разговаривает с потенциальными клиентами, задаёт нужные вопросы и фиксирует полученное.",
+    points: ["Ваши вопросы и ваши критерии", "Структурированные ответы, а не заметки", "Горячие лиды отмечаются"],
   },
   {
     id: "workflows",
     icon: "workflow",
-    title: "Business workflows",
-    text: "Connect conversations to actions. A trigger starts a call; the result flows back to your systems.",
-    points: ["Trigger, call, decide, act", "Signed results sent to your API", "Full audit trail"],
+    title: "Бизнес-процессы",
+    text: "Связываете разговоры с действиями. Событие запускает звонок, результат уходит обратно в ваши системы.",
+    points: ["Событие, звонок, решение, действие", "Подписанные результаты уходят в ваш API", "Полный журнал действий"],
   },
 ];
 
@@ -64,7 +64,7 @@ function Visual({ id }) {
             ))}
           </div>
           <span className="uc-cal-chip">
-            <SiteIcon name="check" size={14} /> Tomorrow · 3:00 PM
+            <SiteIcon name="check" size={14} /> Завтра · 15:00
           </span>
         </div>
       );
@@ -91,7 +91,7 @@ function Visual({ id }) {
     case "leads":
       return (
         <div className="uc-lead">
-          {["Budget", "Timeline", "Decision maker"].map((label, index) => (
+          {["Бюджет", "Сроки", "ЛПР"].map((label, index) => (
             <p key={label} style={{ "--i": index }}>
               <span>
                 <SiteIcon name="check" size={12} />
@@ -109,7 +109,7 @@ function Visual({ id }) {
     default:
       return (
         <div className="uc-flow">
-          {["Trigger", "Call", "Action"].map((label, index) => (
+          {["Событие", "Звонок", "Действие"].map((label, index) => (
             <span key={label} style={{ "--i": index }}>
               {label}
             </span>
@@ -215,17 +215,17 @@ export default function UseCases() {
   return (
     <section ref={ref} className="cases" style={{ "--p": 0, "--travel": 0 }}>
       <div className="cases-pin">
-        <ol ref={trackRef} className="cases-track" aria-label="What your agent can do">
+        <ol ref={trackRef} className="cases-track" aria-label="Что умеет ваш агент">
           <li className="cases-intro">
             <p className="lp-eyebrow">
-              <b>04</b> What it can do
+              <b>04</b> Что он умеет
             </p>
             <h2 className="lp-h2">
-              What can your <em>agent</em> do?
+              Что умеет ваш <em>агент</em>?
             </h2>
-            <p className="lp-lead">Anything a good person on the phone would do, at any hour, for everyone at once.</p>
+            <p className="lp-lead">Всё то же, что сделал бы хороший сотрудник на телефоне, в любое время и сразу для всех.</p>
             <span className="cases-hint" aria-hidden="true">
-              Keep scrolling <i />
+              Листайте дальше <i />
             </span>
           </li>
 

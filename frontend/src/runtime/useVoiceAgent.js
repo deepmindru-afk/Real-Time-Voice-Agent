@@ -1,34 +1,62 @@
-// Connects a call transport (server brain or local rules) to the browser voice
-// loop and to React state. Turns are serialized: one at a time, in the order the
-// caller spoke, so a reply is never spoken over another. A reply is spoken while
-// it is still arriving, sentence by sentence.
+// One call, one hook. It runs the call on whichever engine is available and keeps
+// React state in step with it, and the screens above it never learn which one that was.
+//
+// Two engines exist:
+//
+//   livekit   a LiveKit room with a real agent in it. This is the product: the browser
+//             publishes a microphone, plays the agent's audio and reads its
+//             transcriptions. Recognition, turn detection, reasoning, tools and
+//             interruption all happen on the agent side.
+//   local     the browser's own rules plus SpeechRecognition/SpeechSynthesis. Used
+//             when LiveKit is not configured or cannot be reached, so the console still
+//             works offline. It is a demonstration, not the product.
+//
+// Both report the same state, so everything below is engine-agnostic:
+//
+//   callState   idle | connecting | listening | processing | speaking | ended
+//   voice       { micState, interim, livekit }  micState: off | on | blocked | error
+//   messages    [{ id, time, speaker: "You" | "Agent", text, toolCalls, blocked, interrupted }]
+//   pending     { label } while the agent is waiting for a confirmation
+//   brain       which engine is answering, and why
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { redactSensitive } from "./guardrails.js";
 import { formatTime } from "./format.js";
+import { AI_DISCLOSURE, redactSensitive } from "./guardrails.js";
+import { createLiveKitSession } from "./livekit/session.js";
+import { isLiveKitConfigured, isLiveKitSupported } from "./livekit/support.js";
 import { createLocalTransport, createRemoteTransport, detectBackend } from "./transports.js";
 import { useVoice } from "./useVoice.js";
 
-const CONNECTION_PROBLEM =
-  "I lost the connection to the server. Please try again in a moment.";
+const CONNECTION_PROBLEM = "Связь с сервером прервана. Попробуйте повторить через минуту.";
+const CALL_FAILED = "Не удалось соединиться. Возможно, звонок уже истёк или на него ответили раньше.";
 
-// `agentConfig` is the resolved agent configuration (see agentConfig.js), or null.
-// Today only its voice takes effect here. The rest is the context a call will
-// send to the server brain once the API accepts it (createRemoteTransport).
-export function useVoiceAgent(profile, { attach = null, customerRef = null, agentConfig = null } = {}) {
-  const [callState, setCallState] = useState("idle"); // idle | connecting | listening | processing | speaking | ended
+export function useVoiceAgent(
+  profile,
+  { attach = null, customerRef = null, agentConfig = null, agentRecordId = null } = {}
+) {
+  const [callState, setCallState] = useState("idle");
   const [messages, setMessages] = useState([]);
   const [pending, setPending] = useState(null);
   const [duration, setDuration] = useState(0);
   const [summary, setSummary] = useState(null);
   const [callError, setCallError] = useState(null);
-  const [callConfig, setCallConfig] = useState(null); // the agent configuration this call started with
-  const [startedAt, setStartedAt] = useState(null); // when the call began, in ms
-  const [summaryPending, setSummaryPending] = useState(false); // the call ended, its result is still coming
-  // Which brain answers calls: checking | server | local
-  const [brain, setBrain] = useState({ source: "checking", name: null, note: null });
+  const [callConfig, setCallConfig] = useState(null); // the configuration this call started with
+  const [startedAt, setStartedAt] = useState(null);
+  const [summaryPending, setSummaryPending] = useState(false);
+  const [needsAudio, setNeedsAudio] = useState(false); // the browser is holding the agent's voice back
 
-  const transportRef = useRef(null);
+  // Reported through the same `voice` object the screens already read, whichever
+  // engine is running: LiveKit fills these from the room, the local engine from the
+  // browser's own recognizer.
+  const [micState, setMicState] = useState("off");
+  const [interim, setInterim] = useState("");
+  const [livekit, setLivekit] = useState(false);
+
+  // Which engine answers calls: checking | livekit | server | local
+  const [brain, setBrain] = useState({ source: "checking", name: null, note: null, telephony: false, available: false });
+
+  const engineRef = useRef(null);
+  const sessionRef = useRef(null);
   const startedRef = useRef(0);
   const activeRef = useRef(false);
   const callGenerationRef = useRef(0);
@@ -37,21 +65,23 @@ export function useVoiceAgent(profile, { attach = null, customerRef = null, agen
   const messagesRef = useRef([]);
   const nextIdRef = useRef(1);
   const sendRef = useRef(null);
-  const interruptRef = useRef(null);
   const endCallRef = useRef(null);
 
-  const voice = useVoice({
-    // Speech that arrives after the call has ended must not start a new call.
+  // The browser voice loop, used only by the local engine. It stays mounted either way
+  // so switching engines mid-session cannot leave a recognizer running.
+  const browserVoice = useVoice({
     onFinal: (text) => {
       if (activeRef.current) sendRef.current?.(text);
     },
-    onBargeIn: () => interruptRef.current?.(),
+    onBargeIn: () => {
+      if (sessionRef.current) return; // LiveKit interrupts the agent on its own
+      interruptRef.current?.();
+    },
     voiceName: agentConfig?.voice ?? "",
   });
-  const { openSpeech, cancelSpeech, startListening, stopListening } = voice;
+  const { openSpeech, cancelSpeech, startListening, stopListening } = browserVoice;
 
   const elapsed = () => Math.floor((Date.now() - startedRef.current) / 1000);
-
   const isActive = callState !== "idle" && callState !== "ended";
 
   useEffect(() => {
@@ -65,14 +95,26 @@ export function useVoiceAgent(profile, { attach = null, customerRef = null, agen
   useEffect(() => {
     let cancelled = false;
 
-    detectBackend().then(({ available, brain: name, telephony }) => {
-      if (!cancelled) {
-        setBrain(
-          available
-            ? { source: "server", name, note: null, telephony }
-            : { source: "local", name: "local-rules", note: null, telephony: false }
-        );
+    detectBackend().then((health) => {
+      if (cancelled) return;
+
+      if (isLiveKitConfigured(health)) {
+        setBrain({ source: "livekit", name: "LiveKit", note: null, telephony: health.telephony, available: true });
+        return;
       }
+
+      if (health.available) {
+        setBrain({ source: "server", name: health.brain, note: null, telephony: health.telephony, available: true });
+        return;
+      }
+
+      setBrain({
+        source: "local",
+        name: "local-rules",
+        note: isLiveKitSupported() ? null : "Браузер не поддерживает WebRTC — работает демонстрационный режим.",
+        telephony: false,
+        available: false,
+      });
     });
 
     return () => {
@@ -109,15 +151,133 @@ export function useVoiceAgent(profile, { attach = null, customerRef = null, agen
     [commit]
   );
 
-  // Stops the agent mid-reply: playback and the reply still being generated.
+  // Stops a local reply mid-sentence: playback, and the reply still being generated.
   const interruptAgent = useCallback(() => {
     turnAbortRef.current?.abort();
     cancelSpeech();
   }, [cancelSpeech]);
 
+  const interruptRef = useRef(interruptAgent);
+
   useEffect(() => {
     interruptRef.current = interruptAgent;
   }, [interruptAgent]);
+
+  useEffect(
+    () => () => {
+      // Never leave a room joined, or a microphone live, behind an unmounted console.
+      sessionRef.current?.dispose();
+      sessionRef.current = null;
+    },
+    []
+  );
+
+  // --- the LiveKit engine -----------------------------------------------------------------------
+
+  // Every event the room produces lands here. The agent's audio is already playing by
+  // the time its transcript arrives, so this only records what was said.
+  const onSessionEvent = useCallback(
+    (event) => {
+      switch (event.type) {
+        case "state":
+          setCallState(event.state);
+          return;
+
+        case "mic":
+          setMicState(event.state);
+          return;
+
+        case "audio-blocked":
+          setNeedsAudio(true);
+          return;
+
+        case "pending":
+          setPending(event.label ? { label: event.label } : null);
+          return;
+
+        case "ended":
+          endCallRef.current?.();
+          return;
+
+        case "error":
+          setCallError(event.message);
+          setCallState("ended");
+          return;
+
+        case "tool_call":
+          // Tool calls arrive on the agent's own message while it is still talking, so
+          // they are attached to it rather than shown as a separate turn.
+          patchMessage(messagesRef.current.at(-1)?.id, (message) => ({
+            toolCalls: [...(message.toolCalls ?? []), { name: event.name, args: event.args, result: event.result, guarded: false }],
+          }));
+          return;
+
+        case "transcript": {
+          if (!event.final) {
+            setInterim(event.text);
+            return;
+          }
+
+          setInterim("");
+
+          if (event.append && event.id != null) {
+            patchMessage(event.id, (message) => ({
+              text: message.text ? `${message.text} ${event.text}` : event.text,
+            }));
+            return;
+          }
+
+          addMessage({
+            speaker: event.speaker,
+            text: event.speaker === "You" ? redactSensitive(event.text) : event.text,
+            toolCalls: [],
+          });
+          return;
+        }
+
+        default:
+      }
+    },
+    [addMessage, patchMessage]
+  );
+
+  // Everything the server needs to mint a room-scoped token and dispatch the right
+  // agent to it. The browser never holds an API key or a secret.
+  const startLiveKit = useCallback(async () => {
+    const session = createLiveKitSession({
+      onEvent: onSessionEvent,
+      request: {
+        profile_id: profile?.id ?? null,
+        agent_id: agentRecordId || null,
+        customer_ref: customerRef || null,
+        // An outbound call the agent placed: the server already knows which job this
+        // is, and which room the person answering it belongs in.
+        ...(attach ? { job_id: attach.jobId, token: attach.token } : {}),
+      },
+    });
+
+    sessionRef.current = session;
+
+    await session.start();
+
+    setLivekit(true);
+    setCallState("listening");
+
+    // The call always opens with the AI disclosure, before anything else.
+    addMessage({ speaker: "Agent", text: AI_DISCLOSURE });
+  }, [addMessage, agentRecordId, attach, customerRef, onSessionEvent, profile]);
+
+  // Browsers will not autoplay until the page has been interacted with; this is called
+  // from inside the click handler behind the "tap to hear" button.
+  const unlockAudio = useCallback(async () => {
+    if (!(await sessionRef.current?.unlockAudio())) return false;
+
+    setNeedsAudio(false);
+
+    return true;
+  }, []);
+
+  // --- the local engine ------------------------------------------------------------------------
 
   const speakWhole = useCallback(
     async (id, text) => {
@@ -130,7 +290,7 @@ export function useVoiceAgent(profile, { attach = null, customerRef = null, agen
 
       if (!(await speech.done) && activeRef.current) {
         patchMessage(id, { interrupted: true });
-        transportRef.current?.interrupted();
+        engineRef.current?.transport?.interrupted();
       }
 
       if (activeRef.current) setCallState("listening");
@@ -140,7 +300,7 @@ export function useVoiceAgent(profile, { attach = null, customerRef = null, agen
 
   const runTurn = useCallback(
     async (text) => {
-      const transport = transportRef.current;
+      const transport = engineRef.current?.transport;
 
       if (!activeRef.current || !transport) return;
 
@@ -165,15 +325,8 @@ export function useVoiceAgent(profile, { attach = null, customerRef = null, agen
           if (!activeRef.current || controller.signal.aborted) break;
 
           if (event.type === "tool_call") {
-            const call = {
-              name: event.name,
-              args: event.args,
-              result: event.result,
-              guarded: event.guarded,
-            };
-
             patchMessage(ensureMessage(), (message) => ({
-              toolCalls: [...message.toolCalls, call],
+              toolCalls: [...message.toolCalls, { ...event, guarded: Boolean(event.guarded) }],
             }));
           } else if (event.type === "sentence") {
             patchMessage(ensureMessage(), (message) => ({
@@ -183,7 +336,7 @@ export function useVoiceAgent(profile, { attach = null, customerRef = null, agen
             setCallState("speaking");
           } else if (event.type === "done") {
             agentHangsUp = Boolean(event.ended);
-            setPending(event.pending);
+            setPending(event.pending ?? null);
             if (event.blocked) patchMessage(ensureMessage(), { blocked: true });
           }
         }
@@ -226,40 +379,62 @@ export function useVoiceAgent(profile, { attach = null, customerRef = null, agen
     queueRef.current = queueRef.current.then(job).catch((error) => console.error(error));
   }, []);
 
-  const chooseTransport = useCallback(async () => {
-    // An outbound call exists only on the server: there is nothing to fall back to.
-    if (attach) {
-      const remote = createRemoteTransport(profile, "server", attach);
+  const startLocal = useCallback(async () => {
+    const health = await detectBackend();
 
-      return { transport: remote, greeting: await remote.open() };
-    }
-
-    const { available, brain: name } = await detectBackend();
-
-    if (available) {
-      const remote = createRemoteTransport(profile, name, null, customerRef);
+    if (health.available) {
+      const transport = createRemoteTransport(profile, health.brain, attach, customerRef);
 
       try {
-        const greeting = await remote.open();
+        const greeting = await transport.open();
 
-        setBrain({ source: "server", name, note: null });
+        setBrain({ source: "server", name: health.brain, note: null, telephony: health.telephony, available: true });
 
-        return { transport: remote, greeting };
+        return { transport, greeting };
       } catch (error) {
         console.error(error);
       }
     }
 
-    const local = createLocalTransport(profile);
+    const transport = createLocalTransport(profile);
 
     setBrain({
       source: "local",
-      name: local.name,
-      note: available ? "Server call failed, using the local runtime." : null,
+      name: transport.name,
+      note: health.available ? "Сервер недоступен, включён локальный демонстрационный режим." : null,
+      telephony: false,
+      available: false,
     });
 
-    return { transport: local, greeting: await local.open() };
-  }, [profile, attach, customerRef]);
+    return { transport, greeting: await transport.open() };
+  }, [attach, customerRef, profile]);
+
+  // --- the call ---------------------------------------------------------------------------------
+
+  // Should this call use LiveKit? The answer is the mount-time probe's, which already
+  // asked the server whether it can mint a room token. Only a call started before that
+  // probe answered has to ask for it here.
+  const shouldUseLiveKit = useCallback(async () => {
+    if (brain.source === "livekit") return true;
+    if (brain.source !== "checking") return false;
+
+    return isLiveKitConfigured(await detectBackend());
+  }, [brain.source]);
+
+  const teardown = useCallback(() => {
+    sessionRef.current?.dispose();
+    sessionRef.current = null;
+    setLivekit(false);
+    stopListening();
+    turnAbortRef.current?.abort();
+  }, [stopListening]);
+
+  const abortConnecting = useCallback(() => {
+    activeRef.current = false;
+    callGenerationRef.current += 1;
+    teardown();
+    engineRef.current = null;
+  }, [teardown]);
 
   const beginCall = useCallback(
     async (firstText) => {
@@ -274,49 +449,79 @@ export function useVoiceAgent(profile, { attach = null, customerRef = null, agen
       setPending(null);
       setSummary(null);
       setCallError(null);
+      setInterim("");
+      setMicState("off");
+      setNeedsAudio(false);
       setDuration(0);
       setStartedAt(startedRef.current);
       setCallConfig(agentConfig);
       setCallState("connecting");
+
+      // LiveKit is the product; the browser engine is the offline demonstration. A
+      // LiveKit connection that cannot be made falls back to it rather than failing.
+      if (await shouldUseLiveKit()) {
+        try {
+          await startLiveKit();
+
+          if (!activeRef.current || callGenerationRef.current !== generation) {
+            abortConnecting();
+            return;
+          }
+
+          startedRef.current = Date.now();
+          setStartedAt(startedRef.current);
+
+          if (firstText) {
+            sessionRef.current.sendText(firstText);
+            addMessage({ speaker: "You", text: redactSensitive(firstText) });
+          }
+
+          return;
+        } catch (error) {
+          console.error(error);
+          if (!activeRef.current) return;
+
+          setBrain((current) => ({ ...current, note: "LiveKit недоступен, включён локальный режим." }));
+          teardown();
+        }
+      }
 
       startListening();
 
       // Connecting happens inside the turn queue, so anything the caller says
       // meanwhile waits behind the greeting instead of being dropped.
       enqueue(async () => {
-        let connected;
+        let engine;
 
         try {
-          connected = await chooseTransport();
+          engine = await startLocal();
         } catch (error) {
           console.error(error);
           activeRef.current = false;
           stopListening();
-          setCallError("The call could not be connected. It may have expired or been answered already.");
+          setCallError(CALL_FAILED);
           setCallState("ended");
           return;
         }
 
-        const { transport, greeting } = connected;
-
         // The caller may have ended the call or switched profile while connecting.
         if (!activeRef.current || callGenerationRef.current !== generation) {
-          transport.close(0, []).catch(() => {});
+          engine.transport?.close(0, [])?.catch?.(() => {});
           return;
         }
 
-        transportRef.current = transport;
+        engineRef.current = engine;
         startedRef.current = Date.now();
         setStartedAt(startedRef.current);
 
         // The call always opens with the AI disclosure, before anything else.
-        const greetingId = addMessage({ speaker: "Agent", text: greeting });
+        const greetingId = addMessage({ speaker: "Agent", text: engine.greeting });
 
-        await speakWhole(greetingId, greeting);
+        await speakWhole(greetingId, engine.greeting);
         if (firstText) await runTurn(firstText);
       });
     },
-    [addMessage, agentConfig, chooseTransport, commit, enqueue, runTurn, speakWhole, startListening, stopListening]
+    [abortConnecting, addMessage, agentConfig, commit, enqueue, runTurn, shouldUseLiveKit, speakWhole, startLiveKit, startLocal, startListening, stopListening, teardown]
   );
 
   // Typed text, suggestion chips and recognized speech all take this one path.
@@ -331,11 +536,19 @@ export function useVoiceAgent(profile, { attach = null, customerRef = null, agen
         return;
       }
 
+      if (sessionRef.current) {
+        // LiveKit: the agent is already in the room and transcribes what it hears, so
+        // the line is shown here and the room is told about it in the same moment.
+        sessionRef.current.sendText(text);
+        addMessage({ speaker: "You", text: redactSensitive(text) });
+        return;
+      }
+
       // A new caller turn always cuts whatever the agent is saying.
       interruptAgent();
       enqueue(() => runTurn(text));
     },
-    [beginCall, enqueue, interruptAgent, runTurn]
+    [addMessage, beginCall, enqueue, interruptAgent, runTurn]
   );
 
   useEffect(() => {
@@ -350,12 +563,31 @@ export function useVoiceAgent(profile, { attach = null, customerRef = null, agen
     stopListening();
 
     const seconds = elapsed();
+    const session = sessionRef.current;
 
     setDuration(seconds);
     setPending(null);
+    setInterim("");
     setCallState("ended");
 
-    const transport = transportRef.current;
+    // LiveKit: the room's own result, falling back to one built from the transcript.
+    if (session) {
+      setSummaryPending(true);
+
+      try {
+        setSummary(await session.stop());
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setSummaryPending(false);
+        sessionRef.current = null;
+        setLivekit(false);
+      }
+
+      return;
+    }
+
+    const transport = engineRef.current?.transport;
 
     if (!transport) return;
 
@@ -375,22 +607,22 @@ export function useVoiceAgent(profile, { attach = null, customerRef = null, agen
   }, [endCall]);
 
   const reset = useCallback(() => {
-    activeRef.current = false;
-    callGenerationRef.current += 1;
-    interruptAgent();
-    stopListening();
+    abortConnecting();
 
-    transportRef.current = null;
     commit([]);
     setPending(null);
     setSummary(null);
     setCallError(null);
     setSummaryPending(false);
+    setInterim("");
+    setMicState("off");
+    setNeedsAudio(false);
+    setLivekit(false);
     setStartedAt(null);
     setCallConfig(null);
     setDuration(0);
     setCallState("idle");
-  }, [commit, interruptAgent, stopListening]);
+  }, [abortConnecting, commit]);
 
   const clearMessages = useCallback(() => commit([]), [commit]);
 
@@ -405,7 +637,12 @@ export function useVoiceAgent(profile, { attach = null, customerRef = null, agen
     callConfig,
     callError,
     brain,
-    voice,
+    // The same shape the screens have always read. `voice.livekit` tells them which
+    // engine produced it, so a browser-specific notice (no speech recognition here) is
+    // only shown when the browser engine is the one actually running.
+    voice: { ...browserVoice, micState, interim, livekit },
+    needsAudio,
+    unlockAudio,
     beginCall: () => beginCall(),
     sendText,
     endCall,

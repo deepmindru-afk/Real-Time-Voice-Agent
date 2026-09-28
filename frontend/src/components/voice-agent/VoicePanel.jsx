@@ -21,6 +21,8 @@ export default function VoicePanel({
   onReset,
   onViewHistory,
   acting = false,
+  needsAudio = false,
+  onUnlockAudio,
 }) {
   const [draft, setDraft] = useState("");
 
@@ -37,7 +39,7 @@ export default function VoicePanel({
   };
 
   return (
-    <section className={`voice-panel voice-dock state-${callState}`} aria-label="Call controls">
+    <section className={`voice-panel voice-dock state-${callState}`} aria-label="Управление звонком">
       <div className="dock-main">
         <div className={`dock-stage is-${callState}`}>
           <button
@@ -45,7 +47,11 @@ export default function VoicePanel({
             className="voice-orb-button"
             onClick={isActive ? onStop : callState === "ended" ? onReset : onStart}
             aria-label={
-              isActive ? "Stop conversation" : callState === "ended" ? "Start new conversation" : "Start conversation"
+              isActive
+                ? "Завершить разговор"
+                : callState === "ended"
+                  ? "Начать новый разговор"
+                  : "Начать разговор"
             }
           >
             <CallVisualizer
@@ -65,11 +71,11 @@ export default function VoicePanel({
             <>
               <div className="timer">{formatTime(duration)}</div>
               <div className="live-caption" aria-live="polite">
-                {interim ? `“${interim}”` : " "}
+                {interim ? `«${interim}»` : " "}
               </div>
             </>
           ) : (
-            <div className="dock-hint">Speak, or type below</div>
+            <div className="dock-hint">Говорите или введите текст ниже</div>
           )}
         </div>
 
@@ -77,7 +83,7 @@ export default function VoicePanel({
           {isActive ? (
             <button type="button" className="stop-button" onClick={onStop}>
               <span className="stop-square" />
-              Tap to stop
+              Нажмите, чтобы завершить
             </button>
           ) : (
             <button
@@ -86,14 +92,23 @@ export default function VoicePanel({
               onClick={callState === "ended" ? onReset : onStart}
             >
               <Icon name="microphone" size={18} />
-              {callState === "ended" ? "Start New Conversation" : "Start Conversation"}
+              {callState === "ended" ? "Начать новый разговор" : "Начать разговор"}
+            </button>
+          )}
+
+          {/* A browser will not autoplay the agent's voice until the page has been
+              touched. This is that touch, and it is the only way to unlock it. */}
+          {needsAudio && onUnlockAudio && (
+            <button type="button" className="start-button" onClick={onUnlockAudio}>
+              <Icon name="speaker" size={18} />
+              Включить звук
             </button>
           )}
 
           {!isActive && onViewHistory && (
             <button type="button" className="history-button" onClick={onViewHistory}>
               <Icon name="clock" size={18} />
-              View Call History
+              История звонков
             </button>
           )}
         </div>
@@ -101,14 +116,17 @@ export default function VoicePanel({
 
       {micState === "blocked" && (
         <p className="voice-notice">
-          Microphone access is blocked. Allow it in your browser, or type below.
+          Доступ к микрофону заблокирован. Разрешите его в настройках браузера или введите текст ниже.
         </p>
       )}
 
+      {/* The browser engine needs its own speech recognition. LiveKit does the
+          recognition on its own side, so this warning is only ever shown when the
+          local engine is the one actually running. */}
       {!voiceSupport.recognition && (
         <p className="voice-notice">
-          This browser has no speech recognition (use Chrome or Edge for voice).
-          You can still type below.
+          Этот браузер не распознаёт речь локально (для голоса используйте Chrome или Edge). В режиме
+          LiveKit распознавание выполняет агент. Вы также можете вводить текст ниже.
         </p>
       )}
 
@@ -117,28 +135,22 @@ export default function VoicePanel({
           type="text"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          placeholder={
-            isActive ? "Or type your reply..." : "Type a message to start a call..."
-          }
+          placeholder={isActive ? "Или введите ответ..." : "Введите сообщение, чтобы начать звонок..."}
           disabled={callState === "ended"}
-          aria-label="Type a message"
+          aria-label="Введите сообщение"
         />
         <button type="submit" disabled={!draft.trim() || callState === "ended"}>
-          Send
+          Отправить
         </button>
       </form>
 
       <div className="suggestions">
-        <div className="suggestion-label">💡 Try saying:</div>
+        <div className="suggestion-label">💡 Попробуйте сказать:</div>
 
         <div className="prompt-list">
           {profile.prompts.map((prompt) => (
-            <button
-              key={prompt}
-              onClick={() => onSend(prompt)}
-              disabled={callState === "ended"}
-            >
-              "{prompt}"
+            <button key={prompt} onClick={() => onSend(prompt)} disabled={callState === "ended"}>
+              «{prompt}»
             </button>
           ))}
         </div>

@@ -21,15 +21,15 @@ export function validateSignup({ workspace = "", email = "", password = "" }) {
   const name = workspace.trim();
   const address = email.trim();
 
-  if (!name) errors.workspace = "Give your workspace a name.";
-  else if (lengthOf(name) > MAX_WORKSPACE_LENGTH) errors.workspace = `Keep it under ${MAX_WORKSPACE_LENGTH} characters.`;
+  if (!name) errors.workspace = "Укажите название рабочего пространства.";
+  else if (lengthOf(name) > MAX_WORKSPACE_LENGTH) errors.workspace = `Не более ${MAX_WORKSPACE_LENGTH} символов.`;
 
-  if (!address) errors.email = "Enter your email address.";
-  else if (address.length > MAX_EMAIL_LENGTH || !EMAIL.test(address)) errors.email = "That does not look like an email address.";
+  if (!address) errors.email = "Введите адрес электронной почты.";
+  else if (address.length > MAX_EMAIL_LENGTH || !EMAIL.test(address)) errors.email = "Это не похоже на адрес электронной почты.";
 
-  if (!password) errors.password = "Choose a password.";
-  else if (lengthOf(password) < MIN_PASSWORD_LENGTH) errors.password = `Use at least ${MIN_PASSWORD_LENGTH} characters.`;
-  else if (lengthOf(password) > MAX_PASSWORD_LENGTH) errors.password = `Use at most ${MAX_PASSWORD_LENGTH} characters.`;
+  if (!password) errors.password = "Придумайте пароль.";
+  else if (lengthOf(password) < MIN_PASSWORD_LENGTH) errors.password = `Минимум ${MIN_PASSWORD_LENGTH} символов.`;
+  else if (lengthOf(password) > MAX_PASSWORD_LENGTH) errors.password = `Не более ${MAX_PASSWORD_LENGTH} символов.`;
 
   return errors;
 }

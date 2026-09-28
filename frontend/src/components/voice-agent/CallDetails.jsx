@@ -2,11 +2,11 @@ import Icon from "./Icon";
 import { formatDateTime, formatTime } from "../../runtime/format.js";
 
 const BADGE = {
-  idle: ["Not started", "badge-idle"],
-  live: ["In progress", "badge-info"],
-  summarizing: ["Finishing", "badge-info"],
-  completed: ["Call Completed", "badge-ok"],
-  unavailable: ["No summary", "badge-warn"],
+  idle: ["Не начат", "badge-idle"],
+  live: ["Идёт", "badge-info"],
+  summarizing: ["Завершается", "badge-info"],
+  completed: ["Звонок завершён", "badge-ok"],
+  unavailable: ["Нет итогов", "badge-warn"],
 };
 
 // The result a business workflow would receive back after a call.
@@ -63,22 +63,22 @@ export default function CallDetails({ record, summary, onViewTranscript }) {
       <header className="details-head">
         <h3 id="call-details-title">
           <Icon name="phone" size={20} />
-          Call Details
+          Детали звонка
         </h3>
 
         <span className={`status-badge ${badgeClass}`}>{badgeText}</span>
       </header>
 
       <dl className="detail-grid">
-        <Detail label="Call ID">{record.callId ?? blank}</Detail>
-        <Detail label="Date & Time">{record.startedAt ? formatDateTime(record.startedAt) : blank}</Detail>
-        <Detail label="Duration">
+        <Detail label="Номер звонка">{record.callId ?? blank}</Detail>
+        <Detail label="Дата и время">{record.startedAt ? formatDateTime(record.startedAt) : blank}</Detail>
+        <Detail label="Длительность">
           {record.durationSeconds === null ? blank : formatTime(record.durationSeconds)}
         </Detail>
-        <Detail label="To / Contact" icon="user">
+        <Detail label="Кому / Клиент" icon="user">
           {record.contact}
         </Detail>
-        <Detail label="Role / Field" icon="settings" wide>
+        <Detail label="Роль / отрасль" icon="settings" wide>
           {record.agent.role}
           {record.agent.industry && <span className="detail-sub">{record.agent.industry}</span>}
         </Detail>
@@ -87,16 +87,16 @@ export default function CallDetails({ record, summary, onViewTranscript }) {
       <section className="notes">
         <h4>
           <Icon name="document" size={18} />
-          Notes
+          Примечания
         </h4>
 
-        <p>{record.notes || "Notes are added when the call ends."}</p>
+        <p>{record.notes || "Примечания появятся после завершения звонка."}</p>
       </section>
 
       <div className="details-actions">
         <button type="button" disabled={!completed} onClick={onViewTranscript}>
           <Icon name="document" size={16} />
-          View Full Transcript
+          Полная расшифровка
         </button>
 
         <button
@@ -106,7 +106,7 @@ export default function CallDetails({ record, summary, onViewTranscript }) {
           onClick={() => downloadCallResult(summary)}
         >
           <Icon name="download" size={16} />
-          Download Summary
+          Скачать итоги
         </button>
       </div>
     </section>

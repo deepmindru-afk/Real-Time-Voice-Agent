@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
 import Icon from "./Icon";
+import { useEffect, useState } from "react";
 import { formatClock, formatLongDate } from "../../runtime/format.js";
 
 const MESSAGE = {
-  idle: (agent) => `${agent} is ready.`,
-  live: (agent) => `${agent} is on a call with you.`,
-  summarizing: () => "Finishing up your call summary.",
-  completed: () => "Your call summary is ready.",
-  unavailable: () => "The last call has no summary.",
+  idle: (agent) => `${agent} готов к работе.`,
+  live: (agent) => `${agent} на линии с вами.`,
+  summarizing: () => "Формируем итоги звонка.",
+  completed: () => "Итоги звонка готовы.",
+  unavailable: () => "По последнему звонку нет итогов.",
 };
 
 export default function WelcomeBar({ contact, agentName, status }) {
@@ -26,7 +26,7 @@ export default function WelcomeBar({ contact, agentName, status }) {
       </span>
 
       <div>
-        <h2>Welcome back, {contact}!</h2>
+        <h2>С возвращением, {contact}!</h2>
         <p>{MESSAGE[status](agentName)}</p>
       </div>
 

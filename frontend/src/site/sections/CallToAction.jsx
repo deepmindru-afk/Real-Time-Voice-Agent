@@ -18,11 +18,11 @@ export default function CallToAction() {
 
       <div className="lp-wrap cta-copy">
         <Reveal as="p" className="lp-eyebrow">
-          <b>10</b> Get started
+          <b>10</b> Начало работы
         </Reveal>
 
         <Reveal as="h2" className="cta-title" delay={0.08}>
-          Build your first <em>voice agent.</em>
+          Создайте первого <em>голосового агента.</em>
         </Reveal>
 
         <Reveal className="cta-actions" delay={0.18}>
@@ -34,7 +34,7 @@ export default function CallToAction() {
             onFocus={() => pulse(1.1)}
             onPointerDown={() => pulse(1.4)}
           >
-            Get started <Arrow size={20} />
+            Начать <Arrow size={20} />
           </Link>
           <a
             href="#product"
@@ -45,18 +45,18 @@ export default function CallToAction() {
               scrollToSection("product");
             }}
           >
-            Explore the platform
+            Посмотреть платформу
           </a>
         </Reveal>
 
         <Reveal as="p" className="cta-note" delay={0.26}>
           {signupOpen ? (
             <>
-              Already have an account? <Link to="/signin" transition>Sign in</Link>. New here? <Link to="/signup" transition>Create one</Link>.
+              Уже есть аккаунт? <Link to="/signin" transition>Войти</Link>. Впервые здесь? <Link to="/signup" transition>Создайте его</Link>.
             </>
           ) : (
             <>
-              Sign-up is closed on this server. <Link to="/signin" transition>Sign in</Link> with the account your administrator created for you.
+              Регистрация на этом сервере закрыта. <Link to="/signin" transition>Войдите</Link> под учётной записью, созданной вашим администратором.
             </>
           )}
         </Reveal>

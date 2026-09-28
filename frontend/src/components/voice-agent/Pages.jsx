@@ -11,7 +11,7 @@ export function SectionPlaceholder({ icon, title, description }) {
 
       <h2>{title}</h2>
       <p>{description}</p>
-      <span className="status-badge badge-idle">Coming soon</span>
+      <span className="status-badge badge-idle">Скоро будет</span>
     </section>
   );
 }
@@ -19,22 +19,22 @@ export function SectionPlaceholder({ icon, title, description }) {
 export function ProfilePage({ user }) {
   return (
     <section className="page-card">
-      <h2>Profile</h2>
+      <h2>Профиль</h2>
 
       <dl className="page-facts">
         <div>
-          <dt>Email</dt>
-          <dd>{user?.email ?? "Not signed in (offline mode)"}</dd>
+          <dt>Почта</dt>
+          <dd>{user?.email ?? "Вы не вошли (офлайн-режим)"}</dd>
         </div>
         {user?.role && (
           <div>
-            <dt>Role</dt>
+            <dt>Роль</dt>
             <dd>{user.role[0].toUpperCase() + user.role.slice(1)}</dd>
           </div>
         )}
         {user?.organization_id != null && (
           <div>
-            <dt>Organization ID</dt>
+            <dt>ID организации</dt>
             <dd>{user.organization_id}</dd>
           </div>
         )}
@@ -46,10 +46,10 @@ export function ProfilePage({ user }) {
 export function SettingsPage({ theme, onThemeChange, onConfigure, configLocked }) {
   return (
     <section className="page-card">
-      <h2>Settings</h2>
+      <h2>Настройки</h2>
 
       <fieldset className="page-setting">
-        <legend>Appearance</legend>
+        <legend>Оформление</legend>
 
         <div className="segmented">
           {["light", "dark"].map((mode) => (
@@ -62,18 +62,18 @@ export function SettingsPage({ theme, onThemeChange, onConfigure, configLocked }
                 onChange={() => onThemeChange(mode)}
               />
               <Icon name={mode === "dark" ? "moon" : "sun"} size={16} />
-              {mode === "dark" ? "Dark" : "Light"}
+              {mode === "dark" ? "Тёмная" : "Светлая"}
             </label>
           ))}
         </div>
       </fieldset>
 
       <div className="page-setting">
-        <h3>Agent</h3>
-        <p>What the voice agent does is set in Agent Use Case &amp; Configuration.</p>
+        <h3>Агент</h3>
+        <p>Задачи голосового агента задаются в разделе «Сценарий применения и настройка агента».</p>
 
         <button type="button" className="config-open" disabled={configLocked} onClick={onConfigure}>
-          Open configuration
+          Открыть настройку
           <Icon name="arrowRight" size={16} />
         </button>
       </div>

@@ -6,15 +6,15 @@
 // ask before changing anything, confirm) is how the real agent behaves.
 
 export const DEMO_SCRIPT = [
-  { who: "user", text: "Hi, I need to schedule my appointment." },
-  { who: "agent", text: "Sure. What day works for you?" },
-  { who: "user", text: "Tomorrow afternoon." },
-  { who: "action", label: "Checking the calendar", detail: "find_slots(day: tomorrow, part: afternoon)", result: "3:00 PM is open" },
-  { who: "agent", text: "I found a 3 PM slot. Would you like me to book it?" },
-  { who: "user", text: "Yes, please." },
-  { who: "action", label: "Booking the slot", detail: "book_slot(tomorrow, 3:00 PM)", result: "Confirmed" },
-  { who: "agent", text: "Done. You're booked for 3 PM tomorrow." },
-  { who: "done", label: "Appointment scheduled", detail: "Tomorrow · 3:00 PM" },
+  { who: "user", text: "Здравствуйте, мне нужно перенести приём." },
+  { who: "agent", text: "Конечно. Какой день вам удобен?" },
+  { who: "user", text: "Завтра во второй половине дня." },
+  { who: "action", label: "Проверяю расписание", detail: "find_slots(day: завтра, part: день)", result: "15:00 свободно" },
+  { who: "agent", text: "Нашёл окно на 15:00. Записать вас?" },
+  { who: "user", text: "Да, пожалуйста." },
+  { who: "action", label: "Записываю на приём", detail: "book_slot(завтра, 15:00)", result: "Подтверждено" },
+  { who: "agent", text: "Готово. Вы записаны завтра на 15:00." },
+  { who: "done", label: "Приём перенесён", detail: "Завтра · 15:00" },
 ];
 
 const OPENING_PAUSE = 500;

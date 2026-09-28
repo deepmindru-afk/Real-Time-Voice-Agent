@@ -15,6 +15,8 @@ const REFRESH_MS = 5000;
 
 const when = (iso) => (iso ? formatDateTime(Date.parse(iso)) : "—");
 
+const CHANNEL = { web: "ссылка в браузере", phone: "телефон" };
+
 function Badge({ status }) {
   return <StatusBadge tone={toneOf(status)}>{label(status)}</StatusBadge>;
 }
@@ -121,15 +123,15 @@ function PlaceCall({ profiles, telephony, onPlaced }) {
       <div className="history-form">
         <p>
           <strong>
-            Call {placed.job_id}: {placed.status === "failed" ? "could not be placed" : `calling ${placed.callee.name} now`}.
+            Звонок {placed.job_id}: {placed.status === "failed" ? "не удалось выполнить" : `звоним ${placed.callee.name}`}.
           </strong>{" "}
           {placed.status === "failed"
-            ? "The phone network refused it. Check the number and the server's Twilio settings."
-            : "The call is on the phone. Its status and result appear in the table below when it ends."}
+            ? "Телефонная сеть отклонила вызов. Проверьте номер и настройки телефонии на сервере."
+            : "Звонок уже идёт по телефону. Его статус и результат появятся в таблице ниже, когда он завершится."}
         </p>
         <div className="history-form-buttons">
           <button type="button" onClick={() => setPlaced(null)}>
-            Place another
+            Создать ещё
           </button>
         </div>
       </div>
@@ -140,16 +142,16 @@ function PlaceCall({ profiles, telephony, onPlaced }) {
     return (
       <div className="history-form">
         <p>
-          <strong>Call {placed.job_id} is ringing.</strong> Send this link to {placed.callee.name}; when they open it
-          and answer, the agent makes the call.
+          <strong>Звонок {placed.job_id} звонит.</strong> Отправьте эту ссылку получателю {placed.callee.name}: он
+          откроет её и ответит, и агент соединится.
         </p>
-        <input readOnly value={placed.answer_url} aria-label="Answer link" onFocus={(e) => e.target.select()} />
+        <input readOnly value={placed.answer_url} aria-label="Ссылка для ответа" onFocus={(e) => e.target.select()} />
         <div className="history-form-buttons">
           <button type="button" onClick={() => navigator.clipboard?.writeText(placed.answer_url)}>
-            Copy link
+            Скопировать ссылку
           </button>
           <button type="button" onClick={() => window.open(placed.answer_url, "_blank", "noopener")}>
-            Open it here
+            Открыть здесь
           </button>
           <button type="button" onClick={() => setPlaced(null)}>
             Place another
@@ -161,7 +163,7 @@ function PlaceCall({ profiles, telephony, onPlaced }) {
 
   return (
     <form className="history-form" onSubmit={submit}>
-      <label htmlFor="pc-profile">Profile</label>
+      <label htmlFor="pc-profile">Профиль</label>
       <select id="pc-profile" value={form.profile_id} onChange={changeProfile}>
         {profiles.map((profile) => (
           <option key={profile.id} value={profile.id}>
@@ -172,19 +174,19 @@ function PlaceCall({ profiles, telephony, onPlaced }) {
 
       {telephony && (
         <>
-          <label htmlFor="pc-channel">How</label>
+          <label htmlFor="pc-channel">Как</label>
           <select id="pc-channel" value={form.channel} onChange={set("channel")}>
-            <option value="web">Web link (the person opens it and answers)</option>
-            <option value="phone">Phone call (rings their number)</option>
+            <option value="web">Ссылка в браузере (человек открывает её и отвечает)</option>
+            <option value="phone">Телефонный звонок (звонит на их номер)</option>
           </select>
         </>
       )}
 
       {customers.length > 0 && (
         <>
-          <label htmlFor="pc-customer">Customer data</label>
+          <label htmlFor="pc-customer">Данные клиента</label>
           <select id="pc-customer" value={form.customer_ref} onChange={changeCustomer}>
-            <option value="">Demo data</option>
+            <option value="">Демо-данные</option>
             {customers.map((customer) => (
               <option key={customer.ref} value={customer.ref}>
                 {customer.display_name}
@@ -194,30 +196,30 @@ function PlaceCall({ profiles, telephony, onPlaced }) {
         </>
       )}
 
-      <label htmlFor="pc-name">Who to call</label>
-      <input id="pc-name" value={form.name} onChange={set("name")} placeholder="Priya Sharma" required />
+      <label htmlFor="pc-name">Кого позвонить</label>
+      <input id="pc-name" value={form.name} onChange={set("name")} placeholder="Анна Петрова" required />
 
       <label htmlFor="pc-phone">
-        Phone{form.channel === "phone" ? " (international format, this number will be dialled)" : ""}
+        Телефон{form.channel === "phone" ? " (международный формат — по этому номеру будет выполнен звонок)" : ""}
       </label>
-      <input id="pc-phone" value={form.phone} onChange={set("phone")} placeholder="+91 98765 43210" required />
+      <input id="pc-phone" value={form.phone} onChange={set("phone")} placeholder="+7 999 123-45-67" required />
 
-      <label htmlFor="pc-reason">Why you are calling (said to them)</label>
+      <label htmlFor="pc-reason">Зачем вы звоните (проговаривается клиенту)</label>
       <input
         id="pc-reason"
         value={form.reason}
         onChange={set("reason")}
-        placeholder="unusual activity on your credit card"
+        placeholder="необычная операция по вашей карте"
         required
       />
 
-      <h4 className="history-subsection">Domain links (optional)</h4>
+      <h4 className="history-subsection">Связи с доменом (необязательно)</h4>
       <p className="callee-note">
-        Link the call to a configured agent, one of your contacts, and the workflow that prompted
-        it. The job's record then carries these, exactly as a workflow-created call would.
+        Свяжите звонок с настроенным агентом, одним из ваших контактов и сценарием, который его
+        инициировал. В записи задачи они сохранятся так же, как при звонке, созданном сценарием.
       </p>
 
-      <label htmlFor="pc-agent">Agent</label>
+      <label htmlFor="pc-agent">Агент</label>
       <select id="pc-agent" value={form.agent_id} onChange={set("agent_id")}>
         <option value="">— none —</option>
         {links.agents.map((agent) => (
@@ -227,7 +229,7 @@ function PlaceCall({ profiles, telephony, onPlaced }) {
         ))}
       </select>
 
-      <label htmlFor="pc-contact">Contact</label>
+      <label htmlFor="pc-contact">Контакт</label>
       <select id="pc-contact" value={form.contact_id} onChange={set("contact_id")}>
         <option value="">— none —</option>
         {links.contacts.map((contact) => (
@@ -237,7 +239,7 @@ function PlaceCall({ profiles, telephony, onPlaced }) {
         ))}
       </select>
 
-      <label htmlFor="pc-workflow">Workflow</label>
+      <label htmlFor="pc-workflow">Сценарий</label>
       <select id="pc-workflow" value={form.workflow_id} onChange={set("workflow_id")}>
         <option value="">— none —</option>
         {links.workflows.map((workflow) => (
@@ -255,7 +257,7 @@ function PlaceCall({ profiles, telephony, onPlaced }) {
 
       <div className="history-form-buttons">
         <button type="submit" className="primary" disabled={busy}>
-          {busy ? "Placing..." : "Place call"}
+          {busy ? "Звоним..." : "Позвонить"}
         </button>
       </div>
     </form>
@@ -313,10 +315,10 @@ export default function CallHistory({ serverAvailable, telephony, profiles }) {
   if (!serverAvailable) {
     return (
       <section className="history-page">
-        <h2>Call History</h2>
+        <h2>История звонков</h2>
         <p className="callee-note">
-          Call history is kept by the server. Start the backend (and sign in) to see past calls and to place
-          outbound calls.
+          История звонков хранится на сервере. Запустите бэкенд (и войдите), чтобы видеть прошлые звонки и
+          совершать исходящие.
         </p>
       </section>
     );
@@ -326,7 +328,7 @@ export default function CallHistory({ serverAvailable, telephony, profiles }) {
     return (
       <section className="history-page">
         <button className="history-back" onClick={() => setDetail(null)}>
-          ← Back to history
+          ← Назад к истории
         </button>
         <CallSummary summary={detail} />
       </section>
@@ -336,11 +338,14 @@ export default function CallHistory({ serverAvailable, telephony, profiles }) {
   return (
     <section className="history-page">
       <div className="history-head">
-        <div><h2>Call History</h2><p className="page-sub">Every conversation, who it was with, and how it ended.</p></div>
+        <div>
+          <h2>История звонков</h2>
+          <p className="page-sub">Каждый разговор, с кем он был и чем закончился.</p>
+        </div>
         <div className="history-form-buttons">
-          <button onClick={load}>Refresh</button>
+          <button onClick={load}>Обновить</button>
           <button className="primary" onClick={() => setShowForm(!showForm)}>
-            {showForm ? "Close" : "Place a call"}
+            {showForm ? "Закрыть" : "Создать звонок"}
           </button>
         </div>
       </div>
@@ -353,12 +358,12 @@ export default function CallHistory({ serverAvailable, telephony, profiles }) {
 
       {showForm && <PlaceCall profiles={profiles} telephony={telephony} onPlaced={load} />}
 
-      <h3>Outbound jobs</h3>
+      <h3>Исходящие задачи</h3>
       {jobs.length === 0 ? (
-        <div className="state-block">No outbound calls yet.</div>
+        <div className="state-block">Исходящих звонков пока нет.</div>
       ) : (
         <ScrollReveal>
-          <ul className="call-list" aria-label="Outbound jobs">
+          <ul className="call-list" aria-label="Исходящие задачи">
             {jobs.map((job) => {
               const via = jobLinks(job, links);
 
@@ -372,13 +377,13 @@ export default function CallHistory({ serverAvailable, telephony, profiles }) {
                   <div className="cc-reason">{job.reason}</div>
                   <div className="cc-meta">
                     <span>{when(job.created_at)}</span>
-                    <span>{job.channel}</span>
+                    <span>{CHANNEL[job.channel] ?? job.channel}</span>
                     {via.map((link) => (
                       <span className="cc-link" key={`${link.kind}-${link.id}`}>
                         {link.kind}: {link.name ?? link.id}
                       </span>
                     ))}
-                    {job.callback.status !== "none" && <span>result sent: {job.callback.status}</span>}
+                    {job.callback.status !== "none" && <span>результат отправлен: {job.callback.status}</span>}
                   </div>
                 </li>
               );
@@ -387,19 +392,19 @@ export default function CallHistory({ serverAvailable, telephony, profiles }) {
         </ScrollReveal>
       )}
 
-      <h3>Calls</h3>
+      <h3>Завершённые звонки</h3>
       {calls.length === 0 ? (
-        <div className="state-block">No finished calls yet.</div>
+        <div className="state-block">Завершённых звонков пока нет.</div>
       ) : (
         <ScrollReveal>
-          <ul className="call-list" aria-label="Calls">
+          <ul className="call-list" aria-label="Звонки">
             {calls.map((call) => (
               <li key={call.call_id} className="call-card">
                 <div className="cc-head">
-                  <span className="cc-who">{call.callee_name ?? "Unknown caller"}</span>
+                  <span className="cc-who">{call.callee_name ?? "Неизвестный звонящий"}</span>
                   <Badge status={call.outcome} />
                   <button className="history-open cc-open" onClick={() => open(call.call_id)}>
-                    View
+                    Открыть
                   </button>
                 </div>
                 <div className="cc-meta">

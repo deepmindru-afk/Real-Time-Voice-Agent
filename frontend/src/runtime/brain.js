@@ -1,6 +1,7 @@
 // The "brain" turns one user utterance into a decision. It is the only part of
-// the runtime that will be swapped for an LLM: the session (consent gate,
-// guardrails, audit) sits above it and does not care how the decision was made.
+// the runtime that a real LiveKit agent replaces: with a room connected, the agent
+// reasons on its own side and none of this is used. It stays as the offline
+// demonstration, so the console still answers when no server is reachable.
 //
 // respond({ profile, data, text }) resolves to one of:
 //   { kind: "answer",   topic, toolCalls, reply, ref }   grounded answer from tools
@@ -13,30 +14,31 @@
 
 const COMMON_INTENTS = [
   {
-    match: /\b(are you|r u)\b.*\b(human|real|robot|bot|ai|machine|person)\b/i,
+    match: /\b(ты\s+робот|ты\s+человек|ты\s+живой|ты\s+машина|ты\s+бот|ты\s+ии|ты\s+искусственный\s+интеллект)\b|\b(are\s+you|r\s+?u)\b.*\b(human|real|robot|bot|ai|machine|person)\b/i,
     reply: () =>
-      "I'm an AI assistant, not a human. I only tell you what I can look up, and I always ask before I change anything.",
+      "Я ИИ-ассистент, а не человек. Я сообщаю только то, что могу проверить, и всегда спрашиваю разрешение перед любыми изменениями.",
   },
   {
-    match: /\bwhat (?:can|do) you (?:do|help)|\bhow can you help\b|\bwhat can i ask\b/i,
-    reply: (profile) =>
-      `I can help you ${joinList(profile.capabilities)}. What would you like to do?`,
+    match: /\b(что\s+ты\s+(умеешь|делаешь|можешь)|чем\s+помочь|как\s+ты\s+мне\s+поможешь|что\s+можно\s+спросить)\b|\bwhat\s+(?:can|do)\s+you\s+(?:do|help)\b/i,
+    reply: (profile) => `Я могу помочь вам ${joinList(profile.capabilities)}. Что вы хотите сделать?`,
   },
   {
-    match: /\b(thanks|thank you|bye|goodbye|that's all)\b/i,
-    reply: () =>
-      "You're welcome. If that's everything, you can end the call whenever you like.",
+    match: /\b(спасибо|благодарю|до\s+свидания|всё|это\s+всё|до\s+встречи)\b|\b(thanks|thank you|bye|goodbye|that's all)\b/i,
+    reply: () => "Пожалуйста. Если это всё, вы можете завершить звонок в любой момент.",
   },
   {
-    match: /^(?:hi|hello|hey|good (?:morning|afternoon|evening))\b/i,
-    reply: (profile) =>
-      `Hello again. I can help you ${joinList(profile.capabilities)}.`,
+    match: /^(?:привет|здравствуйте|здравствуй|добрый\s+(?:день|вечер)|доброе\s+утро|хай|приветствую)\b|^(?:hi|hello|hey)\b/i,
+    reply: (profile) => `Здравствуйте! Я помогу вам ${joinList(profile.capabilities)}.`,
   },
 ];
 
+// "посмотреть заявки, проверить риск или назначить звонок" - the last two are joined
+// with "или" rather than a comma, which is how a list is read aloud in Russian.
 export function joinList(items) {
   if (items.length <= 1) return items.join("");
-  return `${items.slice(0, -1).join(", ")} or ${items[items.length - 1]}`;
+  if (items.length === 2) return `${items[0]} или ${items[1]}`;
+
+  return `${items.slice(0, -1).join(", ")} или ${items[items.length - 1]}`;
 }
 
 export const localBrain = {
@@ -59,26 +61,28 @@ export const localBrain = {
         };
       }
 
-      const output = intent.run(data, text);
+      if (intent.run) {
+        const result = intent.run(data, text);
 
-      return {
-        kind: "answer",
-        topic: intent.topic,
-        toolCalls: [{ name: intent.tool, args: output.args, result: output.result }],
-        reply: output.reply,
-        ref: output.ref,
-      };
-    }
-
-    for (const intent of COMMON_INTENTS) {
-      if (intent.match.test(text)) {
-        return { kind: "chat", reply: intent.reply(profile) };
+        return {
+          kind: "answer",
+          topic: intent.topic,
+          toolCalls: [{ name: intent.tool, args: result.args, result: result.result, guarded: false }],
+          reply: result.reply,
+          ref: result.ref,
+        };
       }
     }
 
+    for (const intent of COMMON_INTENTS) {
+      if (intent.match.test(text)) return { kind: "chat", reply: intent.reply(profile, data) };
+    }
+
+    // Nothing matched, and no tool is close: say so rather than guessing, and say what
+    // would have worked instead.
     return {
       kind: "fallback",
-      reply: `I'm not sure I caught that. I can help you ${joinList(profile.capabilities)}.`,
+      reply: `Я не совсем понял вопрос. Попробуйте сформулировать иначе — я могу помочь вам ${joinList(profile.capabilities)}.`,
     };
   },
 };

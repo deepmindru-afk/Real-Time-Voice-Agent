@@ -3,10 +3,10 @@
 // a turn-based bot must never overlap its stages, and a real-time agent must.
 
 export const LANES = [
-  { id: "listen", label: "Listen", note: "Always on. It hears you even while it speaks.", turn: [0, 32], realtime: [0, 44], again: [62, 100] },
-  { id: "understand", label: "Understand", note: "Meaning is worked out as the words arrive.", turn: [38, 50], realtime: [8, 50] },
-  { id: "think", label: "Think", note: "Looks things up without pausing the conversation.", turn: [52, 70], realtime: [22, 60] },
-  { id: "respond", label: "Respond", note: "Starts on the first sentence. Stops when you speak.", turn: [76, 100], realtime: [46, 92], cut: 62 },
+  { id: "listen", label: "Слушает", note: "Включён всегда. Он слышит вас, даже когда говорит сам.", turn: [0, 32], realtime: [0, 44], again: [62, 100] },
+  { id: "understand", label: "Понимает", note: "Смысл складывается по мере поступления слов.", turn: [38, 50], realtime: [8, 50] },
+  { id: "think", label: "Думает", note: "Ищет данные, не прерывая разговор.", turn: [52, 70], realtime: [22, 60] },
+  { id: "respond", label: "Отвечает", note: "Начинает с первой фразы. Замолкает, как только вы заговорите.", turn: [76, 100], realtime: [46, 92], cut: 62 },
 ];
 
 export const GAP = { from: 32, to: 76 }; // the silence in a turn-based exchange
@@ -32,13 +32,13 @@ export function envelopeAt(mode, u, interrupted = false) {
 export function verdictFor(mode, interrupted) {
   if (mode === "turn") {
     return interrupted
-      ? "You interrupt. It keeps talking until it has finished its turn."
-      : "It waits for you to stop, then processes, then answers. In between, there is silence.";
+      ? "Вы перебиваете. Он продолжает говорить, пока не закончит свой ответ."
+      : "Он ждёт, пока вы договорите, потом обрабатывает и только затем отвечает. В промежутках — тишина.";
   }
 
   return interrupted
-    ? "You interrupt. It stops mid-sentence and listens."
-    : "Listening, understanding and thinking overlap. It starts answering while it is still working.";
+    ? "Вы перебиваете. Он замолкает на полуслове и слушает."
+    : "Слушание, понимание и мышление идут одновременно. Он начинает отвечать, ещё не закончив думать.";
 }
 
 // Do any two lanes' bars overlap in time, in this mode?

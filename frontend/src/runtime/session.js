@@ -1,6 +1,11 @@
 // One call = one session. The session owns everything that must hold no matter
-// which profile or brain is loaded: guardrails, the consent gate for guarded
-// actions, and the audit log. It contains no UI and no audio code.
+// which engine is running: guardrails, the consent gate for guarded actions, and
+// the audit log. It contains no UI and no audio code.
+//
+// With a LiveKit agent connected this file is not used - the agent owns its own
+// consent gate and audit log on its side. It is what backs the offline
+// demonstration, and it is the reference for what a room-based call must still
+// guarantee.
 
 import {
   classifyConfirmation,
@@ -20,7 +25,7 @@ function makeCallId(date) {
   const day = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}`;
   const time = `${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 
-  return `CALL-${day}-${time}`;
+  return `ЗВОНОК-${day}-${time}`;
 }
 
 export function log(session, type, detail = {}) {
@@ -69,7 +74,7 @@ function describePending(session, pending) {
 }
 
 function confirmationPrompt(session, pending) {
-  return `I can ${describePending(session, pending)}. Shall I go ahead? Please say yes to confirm, or no to cancel.`;
+  return `Я могу ${describePending(session, pending)}. Подтверждаете? Скажите «да», чтобы подтвердить, или «нет», чтобы отменить.`;
 }
 
 function finish(session, fields) {
@@ -122,7 +127,7 @@ function decline(session) {
   session.pending = null;
 
   return {
-    replyText: "No problem, I've cancelled that. Nothing was changed. Is there anything else I can help with?",
+    replyText: "Хорошо, я отменил. Ничего не изменилось. Чем ещё могу помочь?",
     kind: "declined",
   };
 }
@@ -164,7 +169,7 @@ export async function processTurn(session, rawText) {
     if (decision.kind === "fallback") {
       return finish(session, {
         userText,
-        replyText: `I still need a yes or no before I can go on. ${confirmationPrompt(session, session.pending)}`,
+        replyText: `Мне всё ещё нужно «да» или «нет», прежде чем я продолжу. ${confirmationPrompt(session, session.pending)}`,
         kind: "reprompt",
       });
     }
@@ -206,7 +211,7 @@ export async function processTurn(session, rawText) {
     if (!action) {
       return finish(session, {
         userText,
-        replyText: "I'm not able to do that on this call.",
+        replyText: "К сожалению, я не могу выполнить это на этом звонке.",
         kind: "chat",
       });
     }

@@ -3,11 +3,13 @@ import StatusBadge from "./StatusBadge";
 import ScrollReveal from "./ScrollReveal";
 import { createContact, deleteContact, fetchContacts, updateContact } from "../../runtime/contacts.js";
 
+// The server speaks in these codes; the operator sees them in Russian.
 const CONSENT_OPTIONS = ["unknown", "granted", "revoked"];
+const CONSENT_LABEL = { granted: "дано", revoked: "отозвано", unknown: "неизвестно" };
 const CONSENT_TONE = { granted: "ok", revoked: "warn", unknown: "info" };
 
 function ConsentBadge({ status }) {
-  return <StatusBadge tone={CONSENT_TONE[status] ?? "info"}>consent: {status}</StatusBadge>;
+  return <StatusBadge tone={CONSENT_TONE[status] ?? "info"}>согласие: {CONSENT_LABEL[status] ?? status}</StatusBadge>;
 }
 
 const initials = (name) =>
@@ -72,38 +74,38 @@ function ContactForm({ initial, onSaved, onCancel }) {
 
   return (
     <form className="history-form" onSubmit={submit}>
-      <label htmlFor="contact-name">Name</label>
+      <label htmlFor="contact-name">Имя</label>
       <input id="contact-name" value={form.name} onChange={set("name")} maxLength={120} required />
 
-      <label htmlFor="contact-phone">Phone</label>
-      <input id="contact-phone" value={form.phone} onChange={set("phone")} placeholder="+91 98765 43210" maxLength={24} />
+      <label htmlFor="contact-phone">Телефон</label>
+      <input id="contact-phone" value={form.phone} onChange={set("phone")} placeholder="+7 999 123-45-67" maxLength={24} />
 
-      <label htmlFor="contact-email">Email</label>
+      <label htmlFor="contact-email">Электронная почта</label>
       <input id="contact-email" type="email" value={form.email} onChange={set("email")} maxLength={254} />
 
-      <label htmlFor="contact-consent">Consent</label>
+      <label htmlFor="contact-consent">Согласие на звонки</label>
       <select id="contact-consent" value={form.consentStatus} onChange={set("consentStatus")}>
         {CONSENT_OPTIONS.map((option) => (
           <option key={option} value={option}>
-            {option}
+            {CONSENT_LABEL[option] ?? option}
           </option>
         ))}
       </select>
 
-      <label htmlFor="contact-language">Preferred language</label>
+      <label htmlFor="contact-language">Предпочтительный язык</label>
       <input
         id="contact-language"
         value={form.preferredLanguage}
         onChange={set("preferredLanguage")}
-        placeholder="e.g. hi"
+        placeholder="например, тат"
         maxLength={16}
       />
 
-      <label htmlFor="contact-window">Preferred contact time (optional)</label>
+      <label htmlFor="contact-window">Удобное время связи (необязательно)</label>
       <div className="history-form-buttons">
-        <input aria-label="Preferred start time" placeholder="Start, e.g. 10:00" value={form.contactStart} onChange={set("contactStart")} />
-        <input aria-label="Preferred end time" placeholder="End, e.g. 18:00" value={form.contactEnd} onChange={set("contactEnd")} />
-        <input aria-label="Preferred time zone" placeholder="Timezone, e.g. Asia/Kolkata" value={form.contactTimezone} onChange={set("contactTimezone")} />
+        <input aria-label="Начало интервала" placeholder="Начало, напр. 10:00" value={form.contactStart} onChange={set("contactStart")} />
+        <input aria-label="Конец интервала" placeholder="Конец, напр. 18:00" value={form.contactEnd} onChange={set("contactEnd")} />
+        <input aria-label="Часовой пояс" placeholder="Часовой пояс, напр. Europe/Moscow" value={form.contactTimezone} onChange={set("contactTimezone")} />
       </div>
 
       {error && (
@@ -114,10 +116,10 @@ function ContactForm({ initial, onSaved, onCancel }) {
 
       <div className="history-form-buttons">
         <button type="button" onClick={onCancel} disabled={saving}>
-          Cancel
+          Отмена
         </button>
         <button type="submit" className="primary" disabled={saving}>
-          {saving ? "Saving…" : initial ? "Save changes" : "Add contact"}
+          {saving ? "Сохраняем…" : initial ? "Сохранить изменения" : "Добавить контакт"}
         </button>
       </div>
     </form>
@@ -172,7 +174,7 @@ export default function Contacts({ serverAvailable }) {
   };
 
   const remove = async (contactId) => {
-    if (!window.confirm("Delete this contact? This cannot be undone.")) return;
+    if (!window.confirm("Удалить этот контакт? Это действие необратимо.")) return;
 
     setDeletingId(contactId);
     setError(null);
@@ -192,8 +194,8 @@ export default function Contacts({ serverAvailable }) {
   if (!serverAvailable) {
     return (
       <section className="history-page">
-        <h2>Contacts</h2>
-        <p className="callee-note">Contacts are kept by the server. Start the backend (and sign in) to manage them.</p>
+        <h2>Контакты</h2>
+        <p className="callee-note">Контакты хранятся на сервере. Запустите бэкенд (и войдите), чтобы ими управлять.</p>
       </section>
     );
   }
@@ -203,11 +205,14 @@ export default function Contacts({ serverAvailable }) {
   return (
     <section className="history-page">
       <div className="history-head">
-        <div><h2>Contacts</h2><p className="page-sub">People your AI communicates with.</p></div>
+        <div>
+          <h2>Контакты</h2>
+          <p className="page-sub">Люди, с которыми общается ваш ИИ-агент.</p>
+        </div>
         <div className="history-form-buttons">
-          <button onClick={load}>Refresh</button>
+          <button onClick={load}>Обновить</button>
           <button className="primary" onClick={() => (formOpen ? setFormOpen(false) : openCreate())}>
-            {formOpen ? "Close" : "Add contact"}
+            {formOpen ? "Закрыть" : "Добавить контакт"}
           </button>
         </div>
       </div>
@@ -221,12 +226,12 @@ export default function Contacts({ serverAvailable }) {
       {formOpen && <ContactForm key={editingId ?? "new"} initial={editingContact} onSaved={saved} onCancel={() => setFormOpen(false)} />}
 
       {loading ? (
-        <div className="state-block is-loading">Loading contacts...</div>
+        <div className="state-block is-loading">Загружаем контакты...</div>
       ) : contacts.length === 0 ? (
-        <div className="state-block">No contacts yet.</div>
+        <div className="state-block">Контактов пока нет.</div>
       ) : (
         <ScrollReveal>
-          <ul className="contact-grid" aria-label="Contacts">
+          <ul className="contact-grid" aria-label="Контакты">
             {contacts.map((contact) => (
               <li key={contact.id} className="contact-card">
                 <span className="contact-avatar" aria-hidden="true">
@@ -234,8 +239,8 @@ export default function Contacts({ serverAvailable }) {
                 </span>
                 <div className="contact-main">
                   <div className="contact-name">{contact.name}</div>
-                  <div className="contact-line">{contact.phone ?? <span className="muted">no phone</span>}</div>
-                  <div className="contact-line">{contact.email ?? <span className="muted">no email</span>}</div>
+                  <div className="contact-line">{contact.phone ?? <span className="muted">нет телефона</span>}</div>
+                  <div className="contact-line">{contact.email ?? <span className="muted">нет почты</span>}</div>
                   <div className="contact-tags">
                     <ConsentBadge status={contact.consent_status} />
                     {contact.preferred_language && <span className="muted">{contact.preferred_language}</span>}
@@ -243,10 +248,10 @@ export default function Contacts({ serverAvailable }) {
                 </div>
                 <div className="contact-actions">
                   <button className="history-open" onClick={() => openEdit(contact)}>
-                    Edit
+                    Изменить
                   </button>
                   <button className="history-open" onClick={() => remove(contact.id)} disabled={deletingId === contact.id}>
-                    {deletingId === contact.id ? "Deleting…" : "Delete"}
+                    {deletingId === contact.id ? "Удаляем…" : "Удалить"}
                   </button>
                 </div>
               </li>

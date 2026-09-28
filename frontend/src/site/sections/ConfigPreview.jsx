@@ -8,13 +8,13 @@ import "./ConfigPreview.css";
 // the visitor watches an agent being defined and comes out with the sense "I can make one."
 // The card beside it assembles from the very same values.
 
-const INDUSTRY = "Healthcare";
-const NAME = "CareCall";
-const ROLE = "Appointment Coordinator";
-const PURPOSE = "Confirm appointments and help patients reschedule, by phone, in their own language.";
-const DUTIES = "Verify who I'm speaking to before sharing details. Hand over to staff for any clinical question.";
-const USERS = ["Patients", "Families"];
-const TASKS = ["Schedule appointments", "Answer user questions", "Perform workflow actions"];
+const INDUSTRY = "Медицина";
+const NAME = "АссистентПортал";
+const ROLE = "Координатор приёма";
+const PURPOSE = "Подтверждает запись и помогает пациентам переносить приём — по телефону, на их языке.";
+const DUTIES = "Прежде чем сообщать детали, убедиться, с кем говорит. Любой вопрос о лечении передавать сотруднику.";
+const USERS = ["Пациенты", "Родственники"];
+const TASKS = ["Записывать на приём", "Отвечать на вопросы", "Выполнять действия в системах"];
 
 // When each part starts (ms). Text parts type at 34 characters a second.
 const AT = { industry: 300, name: 900, role: 1600, purpose: 2700 };
@@ -80,23 +80,23 @@ export default function ConfigPreview() {
       <div className="lp-wrap cp-grid">
         <div className="cp-copy">
           <p className="lp-eyebrow">
-            <b>06</b> Build an agent
+            <b>06</b> Создание агента
           </p>
           <h2 className="lp-h2">
-            Describe the job. <em>Get an agent.</em>
+            Опишите задачу. <em>Получите агента.</em>
           </h2>
-          <p className="lp-lead">There is no prompt to engineer. Say what the agent is for, who it talks to and what it is responsible for, and it is ready to test.</p>
+          <p className="lp-lead">Никакой промпт писать не нужно. Скажите, для чего агент, с кем он говорит и за что отвечает, — и он готов к проверке.</p>
 
-          <div className={`cp-card ${deployed ? "is-live" : ""}`} aria-label="The agent, as configured so far">
+          <div className={`cp-card ${deployed ? "is-live" : ""}`} aria-label="Агент в текущей конфигурации">
             <span className="cp-card-av">
               <SiteIcon name="agent" size={22} />
             </span>
             <span className="cp-card-id">
-              <b>{name || "Unnamed agent"}{name.length < NAME.length && name && <span className="cp-caret" />}</b>
-              <em>{role || "Role not set"}</em>
+              <b>{name || "Безымянный агент"}{name.length < NAME.length && name && <span className="cp-caret" />}</b>
+              <em>{role || "Роль не задана"}</em>
             </span>
             <span className={`cp-status ${deployed ? "is-live" : ""}`}>
-              <i /> {deployed ? "Live" : "Draft"}
+              <i /> {deployed ? "Работает" : "Черновик"}
             </span>
             <span className="cp-card-tags">
               {t >= AT.industry && <span>{INDUSTRY}</span>}
@@ -105,62 +105,67 @@ export default function ConfigPreview() {
               ))}
             </span>
             <span className="cp-card-meta">
-              <b>{tasks.length}</b> tasks · <b>{deployed ? "Ready for calls" : "Not deployed"}</b>
+              <b>{tasks.length}</b> задач · <b>{deployed ? "Готов к звонкам" : "Не развёрнут"}</b>
             </span>
           </div>
         </div>
 
-        <div className="cp-window" role="group" aria-label="Agent use case and configuration, an illustration">
+        <div className="cp-window" role="group" aria-label="Сценарий применения и настройка агента — иллюстрация">
           <header className="cp-head">
             <div>
-              <b>Agent Use Case &amp; Configuration</b>
-              <span>Tell us what you want your voice agent to do.</span>
+              <b>Сценарий применения и настройка агента</b>
+              <span>Опишите, что должен делать ваш голосовой агент.</span>
             </div>
             <button type="button" className="cp-replay" onClick={restart} disabled={t < DURATION}>
-              Replay
+              Повторить
             </button>
           </header>
 
           <div className="cp-form">
-            <Field label="Use case / industry" focus={focus === "industry"}>
-              <span className={`cp-select ${t < AT.industry ? "is-empty" : ""}`}>{t >= AT.industry ? INDUSTRY : "Select a use case…"}</span>
+            <Field label="Сценарий применения / отрасль" focus={focus === "industry"}>
+              <span className={`cp-select ${t < AT.industry ? "is-empty" : ""}`}>
+                {t >= AT.industry ? INDUSTRY : "Выберите сценарий…"}
+              </span>
             </Field>
-            <Field label="Agent name" focus={focus === "name"}>
-              <span className={name ? "" : "is-empty"}>{name || "e.g. MineAssist"}{caret("name", name, NAME)}</span>
+            <Field label="Название агента" focus={focus === "name"}>
+              <span className={name ? "" : "is-empty"}>{name || "например, АссистентПортал"}{caret("name", name, NAME)}</span>
             </Field>
-            <Field label="Agent role" focus={focus === "role"}>
-              <span className={role ? "" : "is-empty"}>{role || "What role should it perform?"}{caret("role", role, ROLE)}</span>
+            <Field label="Роль агента" focus={focus === "role"}>
+              <span className={role ? "" : "is-empty"}>{role || "Какую роль он должен выполнять?"}{caret("role", role, ROLE)}</span>
             </Field>
-            <Field label="Purpose" focus={focus === "purpose"} wide>
-              <span className={purpose ? "" : "is-empty"}>{purpose || "What should it help users accomplish?"}{caret("purpose", purpose, PURPOSE)}</span>
+            <Field label="Назначение" focus={focus === "purpose"} wide>
+              <span className={purpose ? "" : "is-empty"}>{purpose || "В чём он поможет пользователям?"}{caret("purpose", purpose, PURPOSE)}</span>
             </Field>
-            <Field label="Target users" focus={focus === "users"}>
+            <Field label="Целевые пользователи" focus={focus === "users"}>
               <span className="cp-chips">
-                {users.length === 0 && <span className="is-empty">Who does it talk to?</span>}
+                {users.length === 0 && <span className="is-empty">С кем он говорит?</span>}
                 {users.map((item) => (
                   <b key={item}>{item}</b>
                 ))}
               </span>
             </Field>
-            <Field label="Primary tasks" focus={focus === "tasks"}>
+            <Field label="Основные задачи" focus={focus === "tasks"}>
               <span className="cp-chips">
-                {tasks.length === 0 && <span className="is-empty">What should it do?</span>}
+                {tasks.length === 0 && <span className="is-empty">Что он должен делать?</span>}
                 {tasks.map((item) => (
                   <b key={item}>{item}</b>
                 ))}
               </span>
             </Field>
-            <Field label="Responsibilities" focus={focus === "duties"} wide>
-              <span className={duties ? "" : "is-empty"}>{duties || "What is it responsible for, and what must it never do?"}{caret("duties", duties, DUTIES)}</span>
+            <Field label="Обязанности" focus={focus === "duties"} wide>
+              <span className={duties ? "" : "is-empty"}>
+                {duties || "За что он отвечает, а что ему делать нельзя?"}
+                {caret("duties", duties, DUTIES)}
+              </span>
             </Field>
           </div>
 
           <footer className="cp-foot">
             <span className={`cp-toast ${deployed ? "is-in" : ""}`} aria-live="polite">
-              <SiteIcon name="check" size={15} /> {name || NAME} is live and ready for calls
+              <SiteIcon name="check" size={15} /> {name || NAME} работает и готов к звонкам
             </span>
             <span className={`cp-deploy ${pressing ? "is-pressed" : ""} ${deployed ? "is-done" : ""}`} style={{ "--k": progressAt(t, AT.deploy, 300) }}>
-              <SiteIcon name="rocket" size={16} /> {deployed ? "Deployed" : "Deploy agent"}
+              <SiteIcon name="rocket" size={16} /> {deployed ? "Развёрнут" : "Развернуть агента"}
             </span>
           </footer>
         </div>

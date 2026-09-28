@@ -20,7 +20,7 @@ export default function TopNavbar({
         <button
           type="button"
           className="icon-button sidebar-toggle"
-          aria-label={sidebarOpen ? "Close navigation" : "Open navigation"}
+          aria-label={sidebarOpen ? "Закрыть навигацию" : "Открыть навигацию"}
           aria-expanded={sidebarOpen}
           aria-controls="app-sidebar"
           onClick={onToggleSidebar}
@@ -29,12 +29,12 @@ export default function TopNavbar({
         </button>
 
         <div className="brand-logo">
-          <span>AI</span>
+          <span>П</span>
         </div>
 
         <div>
           <h1>
-            Real-Time <span>Voice</span> Agent
+            АО «Портал» <span>Голосовые ИИ-агенты</span>
           </h1>
           <p>{workspaceLabel}</p>
         </div>
@@ -45,16 +45,11 @@ export default function TopNavbar({
         {/* Online Status */}
         <div className="online-status">
           <span className="online-dot" />
-          <span>Online</span>
+          <span>Онлайн</span>
         </div>
 
         {/* Notifications */}
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Notifications"
-          title="Notifications"
-        >
+        <button type="button" className="icon-button" aria-label="Уведомления" title="Уведомления">
           <Icon name="bell" size={21} />
         </button>
 
@@ -63,26 +58,12 @@ export default function TopNavbar({
           type="button"
           className="theme-toggle"
           onClick={onToggleTheme}
-          aria-label={
-            isDark ? "Switch to light mode" : "Switch to dark mode"
-          }
-          title={isDark ? "Light mode" : "Dark mode"}
+          aria-label={isDark ? "Переключить в светлую тему" : "Переключить в тёмную тему"}
+          title={isDark ? "Светлая тема" : "Тёмная тема"}
         >
-          <span
-            className={`theme-icon ${
-              !isDark ? "active" : ""
-            }`}
-          >
-            ☀
-          </span>
+          <span className={`theme-icon ${!isDark ? "active" : ""}`}>☀</span>
 
-          <span
-            className={`theme-icon ${
-              isDark ? "active" : ""
-            }`}
-          >
-            ☾
-          </span>
+          <span className={`theme-icon ${isDark ? "active" : ""}`}>☾</span>
         </button>
 
         {/* User Profile */}

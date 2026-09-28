@@ -51,7 +51,7 @@ export default function Chapters() {
       <span className="lp-chapter-bar">
         <i />
       </span>
-      <span ref={nameRef}>Intro</span>
+      <span ref={nameRef}>Вступление</span>
     </div>
   );
 }
