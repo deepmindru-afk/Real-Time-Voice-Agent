@@ -123,14 +123,14 @@ export default function AgentConfigPanel({ label, connection, onSaveLabel, onSav
               label="Эндпоинт токенов"
               required
               error={linkErrors.tokenEndpoint}
-              hint="По умолчанию /api/livekit/token — он поставляется вместе с приложением. Укажите полный URL, только если сервис токенов живёт на другом хосте и разрешает CORS для этого сайта."
+              hint="По умолчанию /api/portalos/token — он поставляется вместе с приложением. Укажите полный URL, только если сервис токенов живёт на другом хосте и разрешает CORS для этого сайта."
             >
               <input
                 {...linkAttrs("tokenEndpoint", true)}
                 type="text"
                 value={link.tokenEndpoint}
                 maxLength={CL.tokenEndpoint}
-                placeholder="/api/livekit/token"
+                placeholder="/api/portalos/token"
                 onChange={setLinkField("tokenEndpoint")}
               />
             </Field>
@@ -162,7 +162,7 @@ export default function AgentConfigPanel({ label, connection, onSaveLabel, onSav
                   type="text"
                   value={link.url}
                   maxLength={CL.url}
-                  placeholder="wss://your-project.livekit.cloud"
+                  placeholder="wss://your-project.portalos.ru"
                   onChange={setLinkField("url")}
                 />
               </Field>
@@ -198,7 +198,7 @@ export default function AgentConfigPanel({ label, connection, onSaveLabel, onSav
 
             <p className="config-hint">
               Это подпись для консоли: она попадает в заголовок записи звонка и в приветствие. Кто именно
-              отвечает на линии, задаёт эндпоинт токенов (переменная LIVEKIT_AGENT_NAME) — из браузера это
+              отвечает на линии, задаёт эндпоинт токенов (переменная AGENT_NAME) — из браузера это
               изменить нельзя и не нужно.
             </p>
 
