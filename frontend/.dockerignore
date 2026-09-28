@@ -1,0 +1,33 @@
+# Build context for the frontend image is this directory. Everything below is either
+# dead weight in the context or a leak, and none of it is something the Dockerfile
+# copies - this is here so that a future `COPY . .` cannot undo the care above.
+
+# Secrets. .env holds the LiveKit credentials; a value that enters a build as an
+# argument or a copied file is written into an image layer, where it stays readable
+# forever. .env.example stays: it documents the variables and holds no values.
+.env
+.env.*
+!.env.example
+
+# Installed again inside the image, from the lockfile, on the image's own platform. A
+# host node_modules is the wrong one at best and shadows the right one at worst.
+node_modules
+
+# The build output. It is produced inside the image, and a stale local dist/ in the
+# context is worse than no dist/ at all - it looks authoritative and is not.
+dist
+dist-ssr
+
+# Version control and local environments
+.git/
+.gitignore
+.vscode/
+.idea/
+.venv/
+venv/
+
+# Logs and editor leftovers
+*.log
+npm-debug.log*
+*.sw?
+.DS_Store
