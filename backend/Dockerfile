@@ -22,7 +22,7 @@ RUN uv pip install -U --no-cache-dir --pre --prerelease allow -r requirements.tx
 #    git+https://github.com/deepmindru-afk/agents.git#subdirectory=livekit-agents \
 COPY . .
 #RUN python koleso_rt_agent.py download-files
-RUN python -m livekit.agents download-files
+#RUN python -m livekit.agents download-files
 ENTRYPOINT ["python", "main.py"]
 
 #FROM python:slim
