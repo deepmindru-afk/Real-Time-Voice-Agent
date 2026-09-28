@@ -42,11 +42,11 @@ export function useVoiceAgent({ connection = null, participantName = null } = {}
         ok: false,
       }
     : connection?.token || connection?.tokenEndpoint
-      ? { state: "ready", name: "LiveKit", note: null, ok: true }
+      ? { state: "ready", name: "Портал", note: null, ok: true }
       : {
           state: "unconfigured",
           name: null,
-          note: "Укажите эндпоинт токенов LiveKit в настройках подключения.",
+          note: "Укажите эндпоинт токенов Портала в настройках подключения.",
           ok: false,
         };
 

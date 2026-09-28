@@ -79,7 +79,7 @@ export default function VoicePanel({
             </>
           ) : (
             <div className="dock-hint">
-              {engine?.ok ? "Говорите или введите текст ниже" : "Сначала настройте подключение к LiveKit"}
+              {engine?.ok ? "Говорите или введите текст ниже" : "Сначала настройте подключение к Порталу"}
             </div>
           )}
         </div>

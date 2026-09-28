@@ -49,7 +49,7 @@ export default function CalleeApp({ name }) {
     body = (
       <div className="state-block">
         <p>{agent.engine.note}</p>
-        <p>Подключение настраивается в консоли на компьютере, в разделе «Подключение к LiveKit».</p>
+        <p>Подключение настраивается в консоли на компьютере, в разделе «Подключение к Порталу».</p>
       </div>
     );
   } else if (agent.callState === "ended") {

@@ -41,7 +41,7 @@ export function createTokenEndpoint(env = process.env) {
   return async function tokenEndpoint(request, response) {
     if (request.method !== "POST") {
       response.setHeader("allow", "POST");
-      send(response, 405, { error: "A LiveKit token is minted with POST" });
+      send(response, 405, { error: "Токен Портала выдаётся только методом POST" });
       return;
     }
 
@@ -65,7 +65,7 @@ export function createTokenEndpoint(env = process.env) {
       }
 
       console.error("livekit token failed", error);
-      send(response, 500, { error: "LiveKit token could not be minted" });
+      send(response, 500, { error: "Не удалось выпустить токен Портала" });
     }
   };
 }

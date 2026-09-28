@@ -62,7 +62,7 @@ export function readCredentials(env = {}) {
     .map(([name]) => name);
 
   if (missing.length) {
-    throw new TokenEndpointError(500, `LiveKit is not configured: ${missing.join(", ")} is not set`);
+    throw new TokenEndpointError(500, `Портал не настроен: не заданы переменные ${missing.join(", ")}`);
   }
 
   return {
