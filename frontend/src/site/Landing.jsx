@@ -4,6 +4,9 @@ import Chapters from "./Chapters.jsx";
 import Logo from "../components/Logo.jsx";
 import Nav from "./Nav.jsx";
 import Hero from "./sections/Hero.jsx";
+import LiveAgentPanel from "./LiveAgentPanel.jsx";
+import OrbHotspot from "./stage/OrbHotspot.jsx";
+import { useLiveAgent } from "./liveAgent.js";
 import { useVoiceStage } from "./stage/useVoiceStage.js";
 import "./landing.css";
 
@@ -21,8 +24,12 @@ const CallToAction = lazy(() => import("./sections/CallToAction.jsx"));
 
 // The public site. It renders at once (text, CSS orb, buttons); the 3D scene and every section
 // below the hero are fetched afterwards, so the first paint never waits for them.
+//
+// It also runs a real agent (see liveAgent.js), which is why the hero and the orb are not only
+// an illustration here: the orb is that call, and pressing it ends the call.
 export default function Landing() {
   const voiceStage = useVoiceStage();
+  const agent = useLiveAgent();
 
   return (
     <div className="lp" data-stage={voiceStage.status}>
@@ -33,8 +40,14 @@ export default function Landing() {
         <VoiceStageBoundary tier={voiceStage.tier} onReady={voiceStage.onReady} onGiveUp={voiceStage.onGiveUp} />
       )}
 
+      <OrbHotspot
+        label={agent.live ? "Завершить разговор с агентом" : "Поговорить с голосовым агентом"}
+        onActivate={agent.toggle}
+      />
+      <LiveAgentPanel agent={agent} />
+
       <main>
-        <Hero />
+        <Hero agent={agent} />
         <Defer id="what" chapter="Что это" minHeight="430vh">
           <Explain />
         </Defer>

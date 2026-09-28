@@ -1,0 +1,251 @@
+/* The live agent on the landing page: the orb's hit area, and the corner panel that says what
+   the call is doing. Both sit above the page and below the nav, and both are quiet until the
+   agent has something to say. */
+
+.orb-hotspot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  transition: opacity 0.35s ease;
+  /* The orb itself is what you see; this is only its hit area and its focus ring. The inset
+     keeps the disc clear of the corners of the orb's box, which is what layout sized. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.orb-hotspot::after {
+  content: "";
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  transition: border-color 0.25s ease, transform 0.35s var(--ease-out);
+}
+
+.orb-hotspot:hover::after {
+  border-color: rgba(var(--brand-rgb), 0.45);
+  transform: scale(1.04);
+}
+
+.orb-hotspot:active::after {
+  transform: scale(0.98);
+}
+
+.orb-hotspot:focus-visible {
+  outline: none;
+}
+
+.orb-hotspot:focus-visible::after {
+  border-color: var(--lp-accent-hi);
+}
+
+/* ------------------------------------------------------------------ the panel */
+
+.lp-live {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 40; /* above the page, below the nav */
+  display: grid;
+  gap: 10px;
+  width: min(360px, calc(100vw - 32px));
+  padding: 10px;
+  border: 1px solid var(--lp-line);
+  border-radius: 18px;
+  background: rgba(10, 6, 26, 0.82);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  animation: lp-live-in 0.5s var(--ease-out) both;
+}
+
+@keyframes lp-live-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* a pill, not a panel, until there is a transcript to show */
+.lp-live:not(.is-open) {
+  width: auto;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 6px 8px 6px 12px;
+  border-radius: 999px;
+}
+
+.lp-live-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  color: var(--lp-muted);
+  font: 500 12px/1.3 var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+}
+
+.lp-live-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lp-live.is-error .lp-live-label {
+  color: #ff9ec4;
+  white-space: normal;
+}
+
+.lp-live-clock {
+  flex: none;
+  font: 500 11px/1 var(--font-mono);
+  color: var(--lp-dim);
+}
+
+.lp-live-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lp-accent);
+  animation: live-dot 1.8s ease-out infinite;
+}
+
+.lp-live.is-busy .lp-live-dot,
+.lp-live.is-warn .lp-live-dot {
+  background: var(--lp-warn);
+}
+
+.lp-live.is-error .lp-live-dot,
+.lp-live.is-muted .lp-live-dot {
+  background: var(--lp-dim);
+  animation: none;
+}
+
+.lp-live-chevron {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  rotate: 45deg;
+  translate: 0 -2px;
+  transition: rotate 0.3s var(--ease-out), translate 0.3s var(--ease-out);
+}
+
+.lp-live.is-open .lp-live-chevron {
+  rotate: 225deg;
+  translate: 0 2px;
+}
+
+.lp-live-thread {
+  display: grid;
+  gap: 10px;
+  max-height: min(38vh, 320px);
+  padding: 4px 6px 10px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-block: 1px solid var(--lp-line);
+  scrollbar-width: thin;
+}
+
+.lp-live-say {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--lp-text);
+  animation: lp-live-say 0.4s var(--ease-out) both;
+}
+
+@keyframes lp-live-say {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.lp-live-say b {
+  font: 500 10px/1 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lp-dim);
+}
+
+.lp-live-say.is-agent b {
+  color: var(--lp-accent-hi);
+}
+
+.lp-live-say.is-you {
+  color: var(--lp-muted);
+}
+
+.lp-live-say.is-interim {
+  opacity: 0.7;
+}
+
+.lp-live-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lp-live-actions button {
+  padding: 7px 12px;
+  border: 1px solid var(--lp-line-2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--lp-muted);
+  font: 500 12px/1.2 var(--font-sans);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+}
+
+.lp-live-actions button:hover {
+  color: var(--lp-text);
+  border-color: rgba(var(--brand-rgb), 0.7);
+}
+
+.lp-live-mic.is-on {
+  color: var(--lp-accent-hi);
+  border-color: rgba(var(--brand-rgb), 0.6);
+  background: rgba(var(--brand-rgb), 0.1);
+}
+
+.lp-live-audio {
+  color: var(--lp-text) !important;
+  border-color: rgba(var(--brand-rgb), 0.6) !important;
+  background: rgba(var(--brand-rgb), 0.14) !important;
+}
+
+.lp-live-retry {
+  color: var(--lp-text) !important;
+}
+
+.lp-live-end {
+  margin-inline-start: auto;
+}
+
+@media (max-width: 640px) {
+  .lp-live {
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-live,
+  .lp-live-say,
+  .lp-live-dot {
+    animation: none;
+  }
+}

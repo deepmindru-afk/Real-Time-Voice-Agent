@@ -15,7 +15,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatTime } from "./format.js";
-import { createLiveKitSession } from "./livekit/session.js";
 import { isLiveKitSupported } from "./livekit/support.js";
 
 const CALL_FAILED = "Не удалось соединиться. Проверьте настройки подключения в панели агента.";
@@ -201,17 +200,27 @@ export function useVoiceAgent({ connection = null, participantName = null } = {}
       setStartedAt(startedRef.current);
       setCallState("connecting");
 
-      // The endpoint names the room and the identity, and dispatches the agent this
-      // deployment is configured with. The browser sends one thing: what to call us.
-      const session = createLiveKitSession({ onEvent, connection, request: { participantName } });
-
-      sessionRef.current = session;
+      let session;
 
       try {
+        // The LiveKit client is half a megabyte, and a call is the only thing that needs it. It
+        // is fetched here rather than imported at the top of the module, so a screen that only
+        // offers a call - the landing page, before its agent joins - still paints without it.
+        const { createLiveKitSession } = await import("./livekit/session.js");
+
+        // The caller may have hung up while the client was still on its way.
+        if (!activeRef.current || callGenerationRef.current !== generation) return;
+
+        // The endpoint names the room and the identity, and dispatches the agent this
+        // deployment is configured with. The browser sends one thing: what to call us.
+        session = createLiveKitSession({ onEvent, connection, request: { participantName } });
+
+        sessionRef.current = session;
+
         await session.start();
       } catch (error) {
         console.error(error);
-        session.dispose();
+        session?.dispose();
         sessionRef.current = null;
         activeRef.current = false;
         setCallError(error?.message ?? CALL_FAILED);
@@ -310,6 +319,20 @@ export function useVoiceAgent({ connection = null, participantName = null } = {}
     return true;
   }, []);
 
+  // The microphone, mid-call. Turning it off leaves the room joined and the agent still able to
+  // speak; it just stops hearing, which is what a visitor who did not mean to talk needs. The
+  // console has no use for it - its panel starts and ends whole calls - so this exists for the
+  // landing page, where an agent is on the line without being asked for.
+  const toggleMic = useCallback(async () => {
+    if (!sessionRef.current) return false;
+
+    const next = micState !== "on";
+
+    await sessionRef.current.setMicEnabled(next);
+
+    return next;
+  }, [micState]);
+
   const clearMessages = useCallback(() => commit([]), [commit]);
 
   return {
@@ -325,6 +348,7 @@ export function useVoiceAgent({ connection = null, participantName = null } = {}
     voice: { micState, interim },
     needsAudio,
     unlockAudio,
+    toggleMic,
     beginCall: () => beginCall(),
     sendText,
     endCall,

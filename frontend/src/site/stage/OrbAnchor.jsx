@@ -7,7 +7,12 @@ import StaticOrb from "./StaticOrb.jsx";
 // middle of the screen. Its own size is the orb's size, so layout decides where and how big.
 // Inside it sits the CSS orb, which is what people see until the 3D scene is up (and forever on
 // devices that get no 3D scene).
-export default function OrbAnchor({ name, className = "", opacity = 1, style }) {
+//
+// `interactive` marks the anchors where the orb is the real agent and may be pressed (the hero's).
+// It is opt-in per anchor because the orb also sits behind cards and buttons further down the
+// page, and an invisible hit area there would swallow their clicks; OrbHotspot reads the flag and
+// stays out of the way everywhere else.
+export default function OrbAnchor({ name, className = "", opacity = 1, interactive = false, style }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -23,7 +28,14 @@ export default function OrbAnchor({ name, className = "", opacity = 1, style }) 
   }, []);
 
   return (
-    <div ref={ref} className={`orb-anchor ${className}`} data-orb={name} data-orb-opacity={opacity} style={style}>
+    <div
+      ref={ref}
+      className={`orb-anchor ${className}`}
+      data-orb={name}
+      data-orb-opacity={opacity}
+      data-orb-interactive={interactive ? "" : undefined}
+      style={style}
+    >
       <StaticOrb />
     </div>
   );
