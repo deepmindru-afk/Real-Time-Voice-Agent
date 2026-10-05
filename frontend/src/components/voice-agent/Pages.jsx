@@ -28,7 +28,7 @@ export function ProfilePage({ connection, agent }) {
 
       <dl className="page-facts">
         <div>
-          <dt>Адрес Портал</dt>
+          <dt>Адрес FALX</dt>
           <dd>{connection?.url || "возвращается эндпоинтом токенов"}</dd>
         </div>
         <div>
@@ -96,7 +96,7 @@ export function SettingsPage({ theme, onThemeChange, onConfigure, configLocked, 
 
       <div className="page-setting">
         <h3>Подключение</h3>
-        <p>Эндпоинт токенов Портал, имя агента и комнаты задаются в панели подключения.</p>
+        <p>Эндпоинт токенов FALX, имя агента и комнаты задаются в панели подключения.</p>
 
         <button type="button" className="config-open" onClick={onOpenConnection}>
           Открыть подключение

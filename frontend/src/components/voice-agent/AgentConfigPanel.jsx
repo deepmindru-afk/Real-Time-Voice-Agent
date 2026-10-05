@@ -106,7 +106,7 @@ export default function AgentConfigPanel({ label, connection, onSaveLabel, onSav
       <form className="config-form" onSubmit={submit} noValidate>
         <header className="config-header">
           <div>
-            <h2 id="config-title">Подключение к Порталу</h2>
+            <h2 id="config-title">Подключение к FALX</h2>
             <p>Куда подключаться и как называть агента в этой консоли.</p>
           </div>
           <button type="button" className="config-close" aria-label="Закрыть без сохранения" onClick={onCancel}>
@@ -153,7 +153,7 @@ export default function AgentConfigPanel({ label, connection, onSaveLabel, onSav
 
               <Field
                 id="config-lk-url"
-                label="Адрес Портала"
+                label="Адрес FALX"
                 error={linkErrors.url}
                 hint="Нужен только вместе с готовым токеном: эндпоинт свой адрес возвращает сам."
               >
@@ -208,7 +208,7 @@ export default function AgentConfigPanel({ label, connection, onSaveLabel, onSav
                 type="text"
                 value={agent.agentName}
                 maxLength={LIMITS.agentName}
-                placeholder="Ассистент Портал"
+                placeholder="Ассистент FALX"
                 onChange={setAgentField("agentName")}
               />
             </Field>

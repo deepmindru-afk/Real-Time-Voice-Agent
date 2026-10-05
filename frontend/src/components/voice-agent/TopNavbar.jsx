@@ -19,12 +19,12 @@ export default function TopNavbar({ theme, onToggleTheme, workspaceLabel, onNavi
         </button>
 
         <div className="brand-logo">
-          <span>П</span>
+          <span>F</span>
         </div>
 
         <div>
           <h1>
-            АО «Портал» <span>Голосовые ИИ-агенты</span>
+            FALX <span>Голосовые ИИ-агенты</span>
           </h1>
           <p>{workspaceLabel}</p>
         </div>

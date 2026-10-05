@@ -108,7 +108,7 @@ export default function Sidebar({
           />
           <StatusRow
             label="ИИ-агент"
-            value={engine.state === "ready" ? "Готов (Портал)" : engine.state === "unsupported" ? "Браузер не поддерживает" : "Не настроен"}
+            value={engine.state === "ready" ? "Готов (FALX)" : engine.state === "unsupported" ? "Браузер не поддерживает" : "Не настроен"}
             ok={engine.state === "ready"}
           />
         </ul>

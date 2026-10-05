@@ -43,7 +43,7 @@ export default function AgentUseCaseConfig({
               type="text"
               value={label.agentName}
               maxLength={LIMITS.agentName}
-              placeholder="Ассистент Портал"
+              placeholder="Ассистент FALX"
               onChange={set("agentName")}
             />
 

@@ -49,7 +49,7 @@ export default function CalleeApp({ name }) {
     body = (
       <div className="state-block">
         <p>{agent.engine.note}</p>
-        <p>Подключение настраивается в консоли на компьютере, в разделе «Подключение к Порталу».</p>
+        <p>Подключение настраивается в консоли на компьютере, в разделе «Подключение к FALX».</p>
       </div>
     );
   } else if (agent.callState === "ended") {
@@ -122,7 +122,7 @@ export default function CalleeApp({ name }) {
         </div>
 
         <p className="callee-note">
-          <strong>АО «Портал»</strong> приглашает {callerName} на разговор с голосовым ИИ-агентом. Комната
+          <strong>FALX</strong> приглашает {callerName} на разговор с голосовым ИИ-агентом. Комната
           создаётся специально для этого звонка, а разговор сохраняется в виде расшифровки.
         </p>
 
@@ -139,9 +139,9 @@ export default function CalleeApp({ name }) {
     <div className="callee-page">
       <header className="callee-header">
         <div className="brand-logo">
-          <span>П</span>
+          <span>F</span>
         </div>
-        <h1>АО «Портал» — голосовой ИИ-агент</h1>
+        <h1>FALX — голосовой ИИ-агент</h1>
       </header>
 
       <main className="callee-card">{body}</main>
