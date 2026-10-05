@@ -3,21 +3,22 @@ import SiteIcon from "../icons.jsx";
 import OrbAnchor from "../stage/OrbAnchor.jsx";
 import "./Architecture.css";
 
-// The real-time loop, drawn as a loop. Seven stages sit on a closed track; light pulses travel
-// around it and each stage glows as one passes. The point is not the parts, it is that the
-// track never ends: what the agent says becomes what the person hears becomes what it hears next.
+// The stack the work runs on, drawn as a loop. Seven parts sit on a closed track; light pulses
+// travel around it and each part glows as one passes. The point is not the parts, it is that the
+// track closes: a campaign writes into the CRM, the CRM feeds the next campaign, and the report
+// comes back to the same place the plan started.
 
 const NODES = [
-  { id: "user", icon: "user", label: "Человек", note: "Любой, у кого есть телефон или браузер.", x: 90, y: 290 },
-  { id: "mic", icon: "mic", label: "Микрофон", note: "Голос захватывается на телефонной линии или в браузере.", x: 280, y: 120 },
-  { id: "stream", icon: "stream", label: "Поток голоса", note: "Звук передаётся непрерывно, мелкими кадрами, а не готовой записью.", x: 600, y: 120 },
-  { id: "agent", icon: "agent", label: "Голосовой агент", note: "Ваш настроенный агент. Его роль, правила и ограничения определяют ответ.", x: 940, y: 120 },
-  { id: "model", icon: "brain", label: "ИИ-модель", note: "Рассуждает, опираясь только на ту информацию, которую агент имеет право видеть.", x: 1110, y: 290 },
-  { id: "tools", icon: "tools", label: "Инструменты и сценарии", note: "Ищут данные, записывают, обновляют, запускают перезвонки. Всё, что меняет данные, ждёт подтверждения.", x: 860, y: 460 },
-  { id: "response", icon: "speaker", label: "Голосовой ответ", note: "Речь начинается с первой законченной фразы и останавливается, как только заговорил человек.", x: 440, y: 460 },
+  { id: "site", icon: "layout", label: "Сайт", note: "Сайт, лендинги, кабинет: то, где клиент видит вас.", x: 90, y: 290 },
+  { id: "crm", icon: "contacts", label: "CRM", note: "Заявки, сделки, воронка и задачи менеджерам — в одной базе.", x: 280, y: 120 },
+  { id: "marketing", icon: "funnel", label: "Маркетинг", note: "Кампании, контент, рассылки и работа с обращениями.", x: 600, y: 120 },
+  { id: "integrations", icon: "plug", label: "Интеграции", note: "Обмен данными между системами без ручного переноса.", x: 940, y: 120 },
+  { id: "analytics", icon: "chart", label: "Отчётность", note: "Срез по каналам, продуктам и сделкам в понятном виде.", x: 1110, y: 290 },
+  { id: "phone", icon: "phone", label: "Телефония", note: "Звонки, запись на приём, маршрутизация обращений.", x: 860, y: 460 },
+  { id: "automation", icon: "workflow", label: "Автоматизация", note: "Сценарии: событие запускает действие без участия человека.", x: 440, y: 460 },
 ];
 
-// A rounded rectangle through every node, clockwise from the User node.
+// A rounded rectangle through every node, clockwise from the site node.
 const LOOP = "M 90 290 V 190 A 70 70 0 0 1 160 120 H 1040 A 70 70 0 0 1 1110 190 V 390 A 70 70 0 0 1 1040 460 H 160 A 70 70 0 0 1 90 390 Z";
 
 const PERIOD = 11000; // ms for one full trip
@@ -129,12 +130,12 @@ export default function Architecture() {
       <div className="lp-wrap">
         <header className="arch-head">
           <p className="lp-eyebrow">
-            <b>07</b> Контур реального времени
+            <b>07</b> Технологический контур
           </p>
           <h2 className="lp-h2">
-            Контур, который <em>никогда не останавливается.</em>
+            Один контур для <em>маркетинга и IT.</em>
           </h2>
-          <p className="lp-lead">Ничто не ждёт предыдущего шага. Каждый этап передаёт данные следующему, поэтому ответ начинается, пока разговор ещё идёт.</p>
+          <p className="lp-lead">Сайт, CRM, реклама, телефония и отчётность связаны между собой. Данные из одного канала доступны в другом, поэтому маркетинг и разработка видят одну и ту же картину бизнеса.</p>
         </header>
 
         <div className="arch-stage">
@@ -175,7 +176,7 @@ export default function Architecture() {
           </div>
         </div>
 
-        <ol className="arch-list" aria-label="Контур по шагам">
+        <ol className="arch-list" aria-label="Технологический контур по частям">
           {NODES.map((node, index) => (
             <li key={node.id} style={{ "--i": index }}>
               <span>
@@ -187,10 +188,10 @@ export default function Architecture() {
           ))}
           <li className="arch-list-back">
             <span>
-              <SiteIcon name="user" size={18} />
+              <SiteIcon name="branch" size={18} />
             </span>
-            <b>Возврат к человеку</b>
-            <em>И контур запускается снова: каждый ответ меняет то, что агент услышит дальше.</em>
+            <b>Контур замыкается</b>
+            <em>И результаты кампании становятся основой для следующего плана: цикл начинается заново, уже на следующих данных.</em>
           </li>
         </ol>
       </div>

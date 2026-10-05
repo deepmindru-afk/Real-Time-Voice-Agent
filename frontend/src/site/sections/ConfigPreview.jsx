@@ -4,25 +4,25 @@ import { useClock } from "../hooks/useClock.js";
 import { progressAt, typedSlice, typingDuration } from "../typing.js";
 import "./ConfigPreview.css";
 
-// The same fields as the real "Agent Use Case & Configuration" form, filled in by a script:
-// the visitor watches an agent being defined and comes out with the sense "I can make one."
-// The card beside it assembles from the very same values.
+// What a project with us looks like on paper: what it is, who it is for, what is inside it and
+// how we work. The form fills itself so the visitor sees the shape of an engagement - not a
+// promise - and the card beside it assembles from the very same values.
 
-const INDUSTRY = "Медицина";
-const NAME = "АссистентПортал";
-const ROLE = "Координатор приёма";
-const PURPOSE = "Подтверждает запись и помогает пациентам переносить приём — по телефону, на их языке.";
-const DUTIES = "Прежде чем сообщать детали, убедиться, с кем говорит. Любой вопрос о лечении передавать сотруднику.";
-const USERS = ["Пациенты", "Родственники"];
-const TASKS = ["Записывать на приём", "Отвечать на вопросы", "Выполнять действия в системах"];
+const DIRECTION = "Маркетинг и IT";
+const FORMAT = "Сопровождение";
+const TASK = "Продвижение и продажи";
+const GOAL = "Продвинуть продукты и услуги на рынке, получать заявки из интернета и видеть, что приносит каждый канал.";
+const AUDIENCE = ["B2B", "B2C"];
+const SCOPE = ["Стратегия", "Реклама", "Сайт", "Интеграции"];
+const RULES = "Сначала аудит и план, потом реализация. Каждый этап согласуем с вами, результат смотрим по цифрам.";
 
 // When each part starts (ms). Text parts type at 34 characters a second.
-const AT = { industry: 300, name: 900, role: 1600, purpose: 2700 };
+const AT = { direction: 300, format: 900, task: 1600, goal: 2700 };
 
-AT.users = AT.purpose + typingDuration(PURPOSE) + 350;
-AT.tasks = AT.users + 900;
-AT.duties = AT.tasks + 1300;
-AT.deploy = AT.duties + typingDuration(DUTIES) + 700;
+AT.audience = AT.goal + typingDuration(GOAL) + 350;
+AT.scope = AT.audience + 900;
+AT.rules = AT.scope + 1300;
+AT.deploy = AT.rules + typingDuration(RULES) + 700;
 AT.live = AT.deploy + 500;
 
 const DURATION = AT.live + 1600;
@@ -53,24 +53,24 @@ export default function ConfigPreview() {
     return () => observer.disconnect();
   }, []);
 
-  const name = typedSlice(NAME, t - AT.name);
-  const role = typedSlice(ROLE, t - AT.role);
-  const purpose = typedSlice(PURPOSE, t - AT.purpose);
-  const duties = typedSlice(DUTIES, t - AT.duties);
-  const users = USERS.filter((_, index) => t >= AT.users + index * 250);
-  const tasks = TASKS.filter((_, index) => t >= AT.tasks + index * 300);
-  const deployed = t >= AT.live;
-  const pressing = t >= AT.deploy && !deployed;
+  const format = typedSlice(FORMAT, t - AT.format);
+  const task = typedSlice(TASK, t - AT.task);
+  const goal = typedSlice(GOAL, t - AT.goal);
+  const rules = typedSlice(RULES, t - AT.rules);
+  const audience = AUDIENCE.filter((_, index) => t >= AT.audience + index * 250);
+  const scope = SCOPE.filter((_, index) => t >= AT.scope + index * 300);
+  const agreed = t >= AT.live;
+  const pressing = t >= AT.deploy && !agreed;
 
   // which field the "cursor" is in, for the focus ring
   const focus =
-    t >= AT.duties && t < AT.deploy ? "duties"
-    : t >= AT.tasks && t < AT.duties ? "tasks"
-    : t >= AT.users && t < AT.tasks ? "users"
-    : t >= AT.purpose && t < AT.users ? "purpose"
-    : t >= AT.role && t < AT.purpose ? "role"
-    : t >= AT.name && t < AT.role ? "name"
-    : t >= AT.industry && t < AT.name ? "industry"
+    t >= AT.rules && t < AT.deploy ? "rules"
+    : t >= AT.scope && t < AT.rules ? "scope"
+    : t >= AT.audience && t < AT.scope ? "audience"
+    : t >= AT.goal && t < AT.audience ? "goal"
+    : t >= AT.task && t < AT.goal ? "task"
+    : t >= AT.format && t < AT.task ? "format"
+    : t >= AT.direction && t < AT.format ? "direction"
     : "";
 
   const caret = (field, text, full) => focus === field && text.length < full.length && <span className="cp-caret" />;
@@ -80,41 +80,41 @@ export default function ConfigPreview() {
       <div className="lp-wrap cp-grid">
         <div className="cp-copy">
           <p className="lp-eyebrow">
-            <b>06</b> Создание агента
+            <b>06</b> Ваш проект
           </p>
           <h2 className="lp-h2">
-            Опишите задачу. <em>Получите агента.</em>
+            Из чего состоит <em>работа с нами.</em>
           </h2>
-          <p className="lp-lead">Никакой промпт писать не нужно. Скажите, для чего агент, с кем он говорит и за что отвечает, — и он готов к проверке.</p>
+          <p className="lp-lead">Ничего готовить заранее не нужно. Опишите задачу — покажем формат: направление, состав работ, сроки и то, как будем считать результат.</p>
 
-          <div className={`cp-card ${deployed ? "is-live" : ""}`} aria-label="Агент в текущей конфигурации">
+          <div className={`cp-card ${agreed ? "is-live" : ""}`} aria-label="Проект в текущей конфигурации">
             <span className="cp-card-av">
-              <SiteIcon name="agent" size={22} />
+              <SiteIcon name="workflow" size={22} />
             </span>
             <span className="cp-card-id">
-              <b>{name || "Безымянный агент"}{name.length < NAME.length && name && <span className="cp-caret" />}</b>
-              <em>{role || "Роль не задана"}</em>
+              <b>{format || "Формат не выбран"}{format.length < FORMAT.length && format && <span className="cp-caret" />}</b>
+              <em>{task || "Задача не сформулирована"}</em>
             </span>
-            <span className={`cp-status ${deployed ? "is-live" : ""}`}>
-              <i /> {deployed ? "Работает" : "Черновик"}
+            <span className={`cp-status ${agreed ? "is-live" : ""}`}>
+              <i /> {agreed ? "В работе" : "Черновик"}
             </span>
             <span className="cp-card-tags">
-              {t >= AT.industry && <span>{INDUSTRY}</span>}
-              {users.map((item) => (
+              {t >= AT.direction && <span>{DIRECTION}</span>}
+              {audience.map((item) => (
                 <span key={item}>{item}</span>
               ))}
             </span>
             <span className="cp-card-meta">
-              <b>{tasks.length}</b> задач · <b>{deployed ? "Готов к звонкам" : "Не развёрнут"}</b>
+              <b>{agreed ? "Согласовано" : "Ждёт согласования"}</b> · {DIRECTION}
             </span>
           </div>
         </div>
 
-        <div className="cp-window" role="group" aria-label="Сценарий применения и настройка агента — иллюстрация">
+        <div className="cp-window" role="group" aria-label="Формат работы с FALX — услуги, сроки и порядок работы, иллюстрация">
           <header className="cp-head">
             <div>
-              <b>Сценарий применения и настройка агента</b>
-              <span>Опишите, что должен делать ваш голосовой агент.</span>
+              <b>Формат работы с FALX</b>
+              <span>Что входит в проект и как он идёт.</span>
             </div>
             <button type="button" className="cp-replay" onClick={restart} disabled={t < DURATION}>
               Повторить
@@ -122,50 +122,50 @@ export default function ConfigPreview() {
           </header>
 
           <div className="cp-form">
-            <Field label="Сценарий применения / отрасль" focus={focus === "industry"}>
-              <span className={`cp-select ${t < AT.industry ? "is-empty" : ""}`}>
-                {t >= AT.industry ? INDUSTRY : "Выберите сценарий…"}
+            <Field label="Направление" focus={focus === "direction"}>
+              <span className={`cp-select ${t < AT.direction ? "is-empty" : ""}`}>
+                {t >= AT.direction ? DIRECTION : "Выберите направление…"}
               </span>
             </Field>
-            <Field label="Название агента" focus={focus === "name"}>
-              <span className={name ? "" : "is-empty"}>{name || "например, АссистентПортал"}{caret("name", name, NAME)}</span>
+            <Field label="Формат работы" focus={focus === "format"}>
+              <span className={format ? "" : "is-empty"}>{format || "например, Сопровождение"}{caret("format", format, FORMAT)}</span>
             </Field>
-            <Field label="Роль агента" focus={focus === "role"}>
-              <span className={role ? "" : "is-empty"}>{role || "Какую роль он должен выполнять?"}{caret("role", role, ROLE)}</span>
+            <Field label="Задача" focus={focus === "task"}>
+              <span className={task ? "" : "is-empty"}>{task || "Что нужно бизнесу?"}{caret("task", task, TASK)}</span>
             </Field>
-            <Field label="Назначение" focus={focus === "purpose"} wide>
-              <span className={purpose ? "" : "is-empty"}>{purpose || "В чём он поможет пользователям?"}{caret("purpose", purpose, PURPOSE)}</span>
+            <Field label="Что нужно получить" focus={focus === "goal"} wide>
+              <span className={goal ? "" : "is-empty"}>{goal || "Какой результат считаем успехом?"}{caret("goal", goal, GOAL)}</span>
             </Field>
-            <Field label="Целевые пользователи" focus={focus === "users"}>
+            <Field label="Кому работаем" focus={focus === "audience"}>
               <span className="cp-chips">
-                {users.length === 0 && <span className="is-empty">С кем он говорит?</span>}
-                {users.map((item) => (
+                {audience.length === 0 && <span className="is-empty">B2B или B2C?</span>}
+                {audience.map((item) => (
                   <b key={item}>{item}</b>
                 ))}
               </span>
             </Field>
-            <Field label="Основные задачи" focus={focus === "tasks"}>
+            <Field label="Что входит в работу" focus={focus === "scope"}>
               <span className="cp-chips">
-                {tasks.length === 0 && <span className="is-empty">Что он должен делать?</span>}
-                {tasks.map((item) => (
+                {scope.length === 0 && <span className="is-empty">Какие направления?</span>}
+                {scope.map((item) => (
                   <b key={item}>{item}</b>
                 ))}
               </span>
             </Field>
-            <Field label="Обязанности" focus={focus === "duties"} wide>
-              <span className={duties ? "" : "is-empty"}>
-                {duties || "За что он отвечает, а что ему делать нельзя?"}
-                {caret("duties", duties, DUTIES)}
+            <Field label="Как работаем" focus={focus === "rules"} wide>
+              <span className={rules ? "" : "is-empty"}>
+                {rules || "Порядок работ и правила согласования"}
+                {caret("rules", rules, RULES)}
               </span>
             </Field>
           </div>
 
           <footer className="cp-foot">
-            <span className={`cp-toast ${deployed ? "is-in" : ""}`} aria-live="polite">
-              <SiteIcon name="check" size={15} /> {name || NAME} работает и готов к звонкам
+            <span className={`cp-toast ${agreed ? "is-in" : ""}`} aria-live="polite">
+              <SiteIcon name="check" size={15} /> {format || FORMAT} согласован и передан в работу
             </span>
-            <span className={`cp-deploy ${pressing ? "is-pressed" : ""} ${deployed ? "is-done" : ""}`} style={{ "--k": progressAt(t, AT.deploy, 300) }}>
-              <SiteIcon name="rocket" size={16} /> {deployed ? "Развёрнут" : "Развернуть агента"}
+            <span className={`cp-deploy ${pressing ? "is-pressed" : ""} ${agreed ? "is-done" : ""}`} style={{ "--k": progressAt(t, AT.deploy, 300) }}>
+              <SiteIcon name="rocket" size={16} /> {agreed ? "Согласовано" : "Согласовать и начать"}
             </span>
           </footer>
         </div>

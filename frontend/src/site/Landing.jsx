@@ -11,6 +11,7 @@ import { useVoiceStage } from "./stage/useVoiceStage.js";
 import "./landing.css";
 
 import Defer from "./Defer.jsx";
+import { ADDRESS, BRAND, CITY, LEGAL, PHONE, SITE } from "./contacts.js";
 
 const VoiceStage = lazy(() => import("./stage/VoiceStage.jsx"));
 const Explain = lazy(() => import("./sections/Explain.jsx"));
@@ -21,6 +22,9 @@ const ConfigPreview = lazy(() => import("./sections/ConfigPreview.jsx"));
 const Architecture = lazy(() => import("./sections/Architecture.jsx"));
 const RealtimeMatters = lazy(() => import("./sections/RealtimeMatters.jsx"));
 const CallToAction = lazy(() => import("./sections/CallToAction.jsx"));
+
+// The year in the footer is the one the visitor is reading the page in, not a build-time constant.
+const YEAR = new Date().getFullYear();
 
 // The public site. It renders at once (text, CSS orb, buttons); the 3D scene and every section
 // below the hero are fetched afterwards, so the first paint never waits for them.
@@ -41,32 +45,32 @@ export default function Landing() {
       )}
 
       <OrbHotspot
-        label={agent.live ? "Завершить разговор с агентом" : "Поговорить с голосовым агентом"}
+        label={agent.live ? "Завершить разговор с ИИ-ассистентом" : "Поговорить с ИИ-ассистентом FALX"}
         onActivate={agent.toggle}
       />
       <LiveAgentPanel agent={agent} />
 
       <main>
         <Hero agent={agent} />
-        <Defer id="what" chapter="Что это" minHeight="430vh">
+        <Defer id="what" chapter="Кто мы" minHeight="430vh">
           <Explain />
         </Defer>
-        <Defer id="demo" chapter="Живая демонстрация" minHeight="820px">
+        <Defer id="demo" chapter="Наша технология" minHeight="820px">
           <Demo />
         </Defer>
-        <Defer id="use-cases" chapter="Что он умеет" minHeight="330vh">
+        <Defer id="use-cases" chapter="Услуги" minHeight="330vh">
           <UseCases />
         </Defer>
-        <Defer id="how" chapter="Как это работает" minHeight="640vh">
+        <Defer id="how" chapter="Как мы работаем" minHeight="560vh">
           <HowItWorks />
         </Defer>
-        <Defer id="build" chapter="Создание агента" minHeight="860px">
+        <Defer id="build" chapter="Ваш проект" minHeight="860px">
           <ConfigPreview />
         </Defer>
-        <Defer id="architecture" chapter="Контур реального времени" minHeight="900px">
+        <Defer id="architecture" chapter="Технологический контур" minHeight="900px">
           <Architecture />
         </Defer>
-        <Defer id="realtime" chapter="Почему реальное время" minHeight="1000px">
+        <Defer id="realtime" chapter="Почему FALX" minHeight="1000px">
           <RealtimeMatters />
         </Defer>
         <Defer id="get-started" chapter="Начало работы" minHeight="100vh">
@@ -79,17 +83,21 @@ export default function Landing() {
           <Link to="/" className="lp-brand">
             <Logo />
             <span>
-              <b>АО «Портал»</b> Голосовые ИИ-агенты
+              <b>{BRAND}</b> {LEGAL} · маркетинг и IT
             </span>
           </Link>
           <nav aria-label="Подвал">
+            <a href={PHONE.href}>{PHONE.label}</a>
+            <a href={SITE.href} target="_blank" rel="noreferrer">
+              {SITE.label}
+            </a>
             <Link to="/app/dashboard" transition>
-              Консоль
-            </Link>
-            <Link to="/app/settings" transition>
-              Настройки
+              Демо-консоль
             </Link>
           </nav>
+          <p className="lp-footer-note">
+            {ADDRESS}, {CITY} · © {YEAR} {LEGAL}
+          </p>
         </div>
       </footer>
     </div>

@@ -4,18 +4,26 @@ import Arrow from "./Arrow.jsx";
 import Logo from "../components/Logo.jsx";
 import { subscribeScroll } from "./hooks/scrollTicker.js";
 import { scrollToSection } from "./hooks/scrollTo.js";
+import { BRAND } from "./contacts.js";
 
-const BRAND = (
+const LINE = "маркетинг и IT";
+
+const BRAND_BLOCK = (
   <>
-    <b>АО «Портал»</b> Голосовые ИИ-агенты
+    <b>{BRAND}</b> {LINE}
   </>
 );
 
+// Every id here is a real section on the page: the ones that used to point at #product never
+// existed, so the link scrolled nowhere.
 const LINKS = [
-  ["Как это работает", "how"],
-  ["Сценарии", "use-cases"],
-  ["Платформа", "product"],
+  ["О компании", "what"],
+  ["Услуги", "use-cases"],
+  ["Как мы работаем", "how"],
+  ["Контакты", "get-started"],
 ];
+
+const CONSOLE = "Демо-консоль";
 
 export default function Nav() {
   const ref = useRef(null);
@@ -50,9 +58,9 @@ export default function Nav() {
   return (
     <header ref={ref} className={`lp-nav ${open ? "is-open" : ""}`}>
       <div className="lp-nav-bar">
-        <Link to="/" className="lp-brand" aria-label="АО «Портал», на главную">
+        <Link to="/" className="lp-brand" aria-label={`${BRAND}, на главную`}>
           <Logo />
-          <span>{BRAND}</span>
+          <span>{BRAND_BLOCK}</span>
         </Link>
 
         <nav className="lp-nav-links" aria-label="Разделы">
@@ -65,7 +73,7 @@ export default function Nav() {
 
         <div className="lp-nav-actions">
           <Link to="/app/dashboard" transition className="lp-btn lp-btn--primary lp-btn--sm">
-            Открыть консоль <Arrow size={16} />
+            {CONSOLE} <Arrow size={16} />
           </Link>
         </div>
 
@@ -88,7 +96,7 @@ export default function Nav() {
           </a>
         ))}
         <Link to="/app/dashboard" transition tabIndex={open ? 0 : -1} className="lp-btn lp-btn--primary">
-          Открыть консоль <Arrow size={16} />
+          {CONSOLE} <Arrow size={16} />
         </Link>
       </div>
     </header>

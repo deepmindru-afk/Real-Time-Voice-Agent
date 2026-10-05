@@ -1,26 +1,30 @@
 import { useEffect, useRef, useState } from "react";
-import Link from "../../router/Link.jsx";
 import Arrow from "../Arrow.jsx";
 import { scrollToSection } from "../hooks/scrollTo.js";
 import { useSectionProgress } from "../hooks/useSectionProgress.js";
 import OrbAnchor from "../stage/OrbAnchor.jsx";
 import { pulse, setMode } from "../stage/bus.js";
 import { useMicrophone } from "./useMicrophone.js";
+import { CITY, PHONE } from "../contacts.js";
 import "./Hero.css";
 
-// The hero tells the whole product in one loop: a voice comes in, the agent works out what it
-// means, and something gets done. The orb behind it follows the same three beats - until a real
-// call is on the line (see site/liveAgent.js), when the beats are the call's own.
+// The hero tells the whole engagement in one loop: we look at the business, we work out the plan,
+// we put it into production. The orb behind it follows the same three beats - until a real call is
+// on the line (see site/liveAgent.js), when the beats are the call's own.
+//
+// `id` and `mode` are mechanics, not words: `mode` tells the orb what to do and `STEP_FOR_MODE`
+// maps a live call back onto these three beats, so both stay exactly as they were and only the
+// label and caption are ours.
 const PHASES = [
-  { id: "voice", mode: "listening", label: "Слушает", caption: "«Мне нужно перенести приём»" },
-  { id: "ai", mode: "thinking", label: "Понимает", caption: "Намерение: перенос приёма · звонящий подтверждён" },
-  { id: "action", mode: "speaking", label: "Выполняет", caption: "«Готово. Вы записаны на четверг на 15:00»" },
+  { id: "voice", mode: "listening", label: "Изучаем", caption: "Аудит: рынок, клиенты, каналы и данные компании" },
+  { id: "ai", mode: "thinking", label: "Планируем", caption: "Стратегия: позиционирование, каналы, бюджет, сроки" },
+  { id: "action", mode: "speaking", label: "Запускаем", caption: "Внедрение: кампании, сайты, интеграции и поддержка" },
 ];
 
 const STEPS = [
-  ["voice", "Голос"],
-  ["ai", "ИИ"],
-  ["action", "Действие"],
+  ["voice", "Аудит"],
+  ["ai", "Стратегия"],
+  ["action", "Внедрение"],
 ];
 
 // Which of the three beats a live call is on. The agent publishes its state; the hero only has to
@@ -28,7 +32,7 @@ const STEPS = [
 const STEP_FOR_MODE = { listening: "voice", thinking: "ai", speaking: "action" };
 
 const MIC_LABEL = {
-  off: "Говорите, чтобы увидеть, как он слушает",
+  off: "Говорите, чтобы увидеть, как работает шар",
   asking: "Ожидаем разрешения…",
   on: "Слушаю вас. Нажмите, чтобы остановить",
   blocked: "Микрофон заблокирован, шар продолжает пульсировать сам",
@@ -41,6 +45,9 @@ const LIVE_MIC_LABEL = {
   on: "Микрофон включён. Нажмите, чтобы заглушить",
   off: "Микрофон заглушен. Нажмите, чтобы говорить",
 };
+
+const POSITIONING =
+  "Ведём маркетинг и IT в одной команде: разрабатываем стратегии, продвигаем продукты и услуги на рынке, собираем данные и доводим задачи до результата.";
 
 export default function Hero({ agent = null }) {
   const ref = useRef(null);
@@ -66,7 +73,7 @@ export default function Hero({ agent = null }) {
     return () => observer.disconnect();
   }, []);
 
-  // Walk voice -> AI -> action while the hero is on screen and the visitor is not speaking. A
+  // Walk audit -> plan -> launch while the hero is on screen and the visitor is not speaking. A
   // real call is already doing this, so the script stops instead of talking over it.
   useEffect(() => {
     if (!visible || talking || live) return undefined;
@@ -99,7 +106,7 @@ export default function Hero({ agent = null }) {
 
   const step = live ? STEP_FOR_MODE[mode] : talking ? "voice" : current.id;
   const caption = live
-    ? agent.messages.at(-1)?.text ?? "Агент на линии. Нажмите на шар, чтобы закончить разговор."
+    ? agent.messages.at(-1)?.text ?? "Ассистент на линии. Нажмите на шар, чтобы закончить разговор."
     : talking
       ? "Говорите что угодно. Шар движется вместе с вашим голосом."
       : current.caption;
@@ -109,7 +116,7 @@ export default function Hero({ agent = null }) {
       <OrbAnchor name="hero" className="hero-orb" interactive />
 
       <div className="hero-status">
-        <ol className="hero-steps" aria-label="Голос, ИИ, действие">
+        <ol className="hero-steps" aria-label="Аудит, стратегия, внедрение">
           {STEPS.map(([id, label], index) => (
             <li key={id} className={step === id ? "is-on" : ""}>
               <span>{label}</span>
@@ -149,45 +156,41 @@ export default function Hero({ agent = null }) {
 
       <div className="hero-copy">
         <p className="lp-eyebrow hero-rise" style={{ "--i": 0 }}>
-          <span className="live-dot" aria-hidden="true" /> Голосовой ИИ реального времени
+          <span className="live-dot" aria-hidden="true" /> B2B/B2C-маркетинг и IT · {CITY}
         </p>
 
         <h1 className="hero-title">
           <span className="hero-line">
-            <span style={{ "--i": 1 }}>ИИ-агенты, которые</span>
+            <span style={{ "--i": 1 }}>Комплексное сопровождение</span>
           </span>
           <span className="hero-line">
             <span style={{ "--i": 2 }}>
-              действительно <em>говорят.</em>
+              бизнеса: <em>маркетинг и IT</em>
             </span>
           </span>
         </h1>
 
         <div className="hero-foot hero-rise" style={{ "--i": 4 }}>
-          <p className="lp-lead">
-            Создавайте голосовых агентов, которые ведут естественный разговор, понимают, что нужно
-            человеку, и выполняют задачу прямо во время звонка.
-          </p>
+          <p className="lp-lead">{POSITIONING}</p>
 
           <div className="hero-actions">
-            <Link
-              to="/app/dashboard"
-              transition
-              className="lp-btn lp-btn--primary"
+            <a
+              href={PHONE.href}
+              className="lp-btn lp-btn--primary lp-btn--phone"
               onPointerEnter={() => pulse(0.9)}
               onFocus={() => pulse(0.9)}
             >
-              Начать <Arrow />
-            </Link>
+              {PHONE.label} <Arrow />
+            </a>
             <a
-              href="#demo"
+              href="#what"
               className="lp-btn lp-btn--ghost"
               onClick={(event) => {
                 event.preventDefault();
-                scrollToSection("demo");
+                scrollToSection("what");
               }}
             >
-              Послушать, как это работает
+              О компании
             </a>
           </div>
         </div>

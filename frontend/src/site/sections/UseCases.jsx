@@ -4,58 +4,56 @@ import Wave from "../Wave.jsx";
 import { useSectionProgress } from "../hooks/useSectionProgress.js";
 import "./UseCases.css";
 
-// Six things an agent does. Each card carries a small living picture of its job that swells on
+// Six directions of work. Each card carries a small living picture of its job that swells on
 // hover; the section itself pins to the screen and turns vertical scroll into a sideways drift.
-const CASES = [
+const SERVICES = [
   {
-    id: "calls",
-    icon: "phone",
-    title: "Входящие звонки",
-    text: "Агенты, которые отвечают и ведут настоящий разговор. Живой диалог, перебивания допустимы.",
-    points: ["Говорит и слушает одновременно", "Передаёт диалог, когда нужно", "По каждому звонку — итоги"],
-  },
-  {
-    id: "schedule",
+    id: "strategy",
     icon: "calendar",
-    title: "Запись на приём",
-    text: "Находит подходящее время, подтверждает его с человеком и только потом записывает.",
-    points: ["Проверяет занятость в реальном времени", "Спрашивает перед любым изменением", "Обрабатывает переносы"],
+    title: "Стратегия и планирование",
+    text: "Разрабатываем маркетинговую стратегию под вашу задачу и планируем кампании по шагам.",
+    points: ["Позиционирование и аудитория", "Каналы и календарь кампаний", "Смета, бюджет и сроки"],
   },
   {
-    id: "reminders",
-    icon: "bell",
-    title: "Напоминания",
-    text: "Связывается заранее с важными событиями: приёмами, платежами, продлением.",
-    points: ["Срабатывает по дате из карточки", "Учитывает согласие и часы связи", "Подтверждает, что его услышали"],
-  },
-  {
-    id: "notifications",
+    id: "promotion",
     icon: "broadcast",
-    title: "Оповещения",
-    text: "Передаёт важную информацию голосом и проверяет, что её действительно поняли.",
-    points: ["Телефон или ссылка в браузере", "Одно сообщение — много людей", "Результат фиксируется по каждому звонку"],
+    title: "Продвижение продуктов и услуг",
+    text: "Доводим предложение до рынка: реклама, контент, работа с площадками и обращениями.",
+    points: ["Рекламные кампании в нужных каналах", "Тексты, баннеры, посадочные страницы", "Ответы на обращения и отзывы"],
   },
   {
-    id: "leads",
-    icon: "funnel",
-    title: "Квалификация лидов",
-    text: "Разговаривает с потенциальными клиентами, задаёт нужные вопросы и фиксирует полученное.",
-    points: ["Ваши вопросы и ваши критерии", "Структурированные ответы, а не заметки", "Горячие лиды отмечаются"],
+    id: "research",
+    icon: "chart",
+    title: "Аналитика и исследования",
+    text: "Смотрим спрос, цены и конкурентов до того, как потрачены деньги, и сверяем планы с фактом.",
+    points: ["Срез по нише и конкурентам", "Проверка гипотез до запуска", "Отчётность по каналам и продуктам"],
   },
   {
-    id: "workflows",
+    id: "web",
+    icon: "layout",
+    title: "Сайты и цифровые продукты",
+    text: "Проектируем и собираем сайты и цифровые продукты: структура, тексты, дизайн, запуск.",
+    points: ["Структура, прототип, тексты", "Дизайн и вёрстка", "Сборка, тестирование, запуск"],
+  },
+  {
+    id: "automation",
     icon: "workflow",
-    title: "Бизнес-процессы",
-    text: "Связываете разговоры с действиями. Событие запускает звонок, результат уходит обратно в ваши системы.",
-    points: ["Событие, звонок, решение, действие", "Подписанные результаты уходят в ваш API", "Полный журнал действий"],
+    title: "Интеграции, CRM и автоматизация",
+    text: "Соединяем ваши системы так, чтобы данные передавались без ручного переноса, а рутина уходила в сценарии.",
+    points: ["Настройка CRM и обмен данными", "Сценарии вместо ручных операций", "Телефония, почта, внешние сервисы"],
+  },
+  {
+    id: "support",
+    icon: "tools",
+    title: "Поддержка и сопровождение",
+    text: "Ведём то, что запустили: обновления, исправления и развитие по мере новых задач.",
+    points: ["Мелкие исправления и обновления", "Мониторинг и работоспособность", "План развития на следующий период"],
   },
 ];
 
 function Visual({ id }) {
   switch (id) {
-    case "calls":
-      return <Wave level={0.42} className="uc-wave" bars={30} />;
-    case "schedule":
+    case "strategy":
       return (
         <div className="uc-cal">
           <div className="uc-cal-grid">
@@ -64,20 +62,11 @@ function Visual({ id }) {
             ))}
           </div>
           <span className="uc-cal-chip">
-            <SiteIcon name="check" size={14} /> Завтра · 15:00
+            <SiteIcon name="check" size={14} /> План готов
           </span>
         </div>
       );
-    case "reminders":
-      return (
-        <div className="uc-bell">
-          <i />
-          <i />
-          <i />
-          <SiteIcon name="bell" size={54} />
-        </div>
-      );
-    case "notifications":
+    case "promotion":
       return (
         <div className="uc-cast">
           <i className="uc-cast-core" />
@@ -88,10 +77,10 @@ function Visual({ id }) {
           ))}
         </div>
       );
-    case "leads":
+    case "research":
       return (
         <div className="uc-lead">
-          {["Бюджет", "Сроки", "ЛПР"].map((label, index) => (
+          {["Спрос", "Цены", "Конкуренты"].map((label, index) => (
             <p key={label} style={{ "--i": index }}>
               <span>
                 <SiteIcon name="check" size={12} />
@@ -106,10 +95,21 @@ function Visual({ id }) {
           </svg>
         </div>
       );
+    case "automation":
+      return (
+        <div className="uc-bell">
+          <i />
+          <i />
+          <i />
+          <SiteIcon name="bell" size={54} />
+        </div>
+      );
+    case "support":
+      return <Wave level={0.42} className="uc-wave" bars={30} />;
     default:
       return (
         <div className="uc-flow">
-          {["Событие", "Звонок", "Действие"].map((label, index) => (
+          {["Сайт", "Контент", "Заявка"].map((label, index) => (
             <span key={label} style={{ "--i": index }}>
               {label}
             </span>
@@ -215,21 +215,24 @@ export default function UseCases() {
   return (
     <section ref={ref} className="cases" style={{ "--p": 0, "--travel": 0 }}>
       <div className="cases-pin">
-        <ol ref={trackRef} className="cases-track" aria-label="Что умеет ваш агент">
+        <ol ref={trackRef} className="cases-track" aria-label="Услуги FALX">
           <li className="cases-intro">
             <p className="lp-eyebrow">
-              <b>04</b> Что он умеет
+              <b>04</b> Услуги
             </p>
             <h2 className="lp-h2">
-              Что умеет ваш <em>агент</em>?
+              Что мы <em>делаем</em>
             </h2>
-            <p className="lp-lead">Всё то же, что сделал бы хороший сотрудник на телефоне, в любое время и сразу для всех.</p>
+            <p className="lp-lead">
+              Маркетинг и IT в одном контуре: от анализа и стратегии до сайта, интеграций и
+              поддержки. Можно взять направление целиком или собрать комплект под задачу.
+            </p>
             <span className="cases-hint" aria-hidden="true">
               Листайте дальше <i />
             </span>
           </li>
 
-          {CASES.map((item, index) => (
+          {SERVICES.map((item, index) => (
             <Card key={item.id} item={item} index={index} />
           ))}
           <li className="cases-end" aria-hidden="true" />

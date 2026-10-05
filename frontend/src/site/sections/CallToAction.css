@@ -68,8 +68,70 @@
   text-underline-offset: 3px;
 }
 
+/* the business card, closing the page */
+.cta-contacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1px;
+  width: min(100%, 860px);
+  margin-top: clamp(6px, 2vh, 18px);
+  border: 1px solid var(--lp-line-2);
+  border-radius: 22px;
+  background: var(--lp-line);
+  overflow: hidden;
+}
+
+.cta-contact {
+  display: grid;
+  gap: 8px;
+  padding: 20px 22px;
+  text-align: left;
+  background: rgba(12, 8, 32, 0.86);
+}
+
+.cta-contact b {
+  font: 500 10.5px/1.2 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lp-dim);
+}
+
+.cta-contact span,
+.cta-contact a {
+  font-size: 15px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: var(--lp-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.cta-contact a {
+  transition: color 0.2s;
+}
+
+.cta-contact a:hover {
+  color: var(--lp-accent-hi);
+  text-decoration: underline;
+  text-decoration-color: rgba(var(--brand-rgb), 0.7);
+  text-underline-offset: 3px;
+}
+
 @media (max-width: 640px) {
   .cta-actions .lp-btn {
     flex: 1 1 100%;
+  }
+
+  .cta-contacts {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cta-contact {
+    padding: 16px 16px;
+  }
+
+  .cta-contact span,
+  .cta-contact a {
+    font-size: 14px;
   }
 }

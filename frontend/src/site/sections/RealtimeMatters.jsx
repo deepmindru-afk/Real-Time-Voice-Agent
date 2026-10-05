@@ -3,15 +3,19 @@ import { subscribeScroll } from "../hooks/scrollTicker.js";
 import { LANES, envelopeAt, verdictFor } from "./realtimeModel.js";
 import "./RealtimeMatters.css";
 
-// The same four things happen in both modes (listen, understand, think, respond). What changes is
-// whether they happen one after another or all at once, and that is the whole difference between
-// waiting for a chatbot and talking to someone.
+// The same four things happen either way: the task, the strategy, the work and the launch. What
+// changes is whether they happen one after another or all at once - and that is the whole
+// difference between two separate vendors and one team that does both.
+
+const MODE_LABEL = { turn: "Два подрядчика", realtime: "FALX вместе" };
+
+const INTERRUPT_LABEL = { on: "Вернуть исходную задачу", off: "Сменить задачу" };
 
 const reducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 
-// A wide ribbon of voice behind the lanes. It is drawn only while on screen, at a capped pixel
-// ratio; its loudness at each x comes from the same model that draws the lanes, so the picture
-// and the diagram always agree.
+// A wide ribbon of movement behind the lanes: how much the project is moving at each point of it.
+// It is drawn only while on screen, at a capped pixel ratio; its loudness at each x comes from the
+// same model that draws the lanes, so the picture and the diagram always agree.
 function WaveCanvas({ mode, interrupted, active }) {
   const ref = useRef(null);
   const state = useRef({ mode, interrupted });
@@ -141,19 +145,20 @@ export default function RealtimeMatters() {
       <div className="lp-wrap">
         <header className="rt-head">
           <p className="lp-eyebrow">
-            <b>08</b> Почему важно реальное время
+            <b>08</b> Почему FALX
           </p>
           <h2 className="lp-h2">
-            Разговор — это не очередь реплик. <em>Это непрерывный поток.</em>
+            Маркетинг и IT <em>в одной команде.</em>
           </h2>
+          <p className="lp-lead">Когда стратегию пишет один, а сайт и CRM делает другой, половина работы упирается в передачу: правки, согласования и ожидание. Один подрядчик убирает паузы между этапами.</p>
         </header>
 
-        <div className="rt-toggle" role="group" aria-label="Сравнение способов формирования ответа">
+        <div className="rt-toggle" role="group" aria-label="Сравнение: работа по отдельности и работа вместе">
           <button type="button" className={mode === "turn" ? "is-on" : ""} aria-pressed={mode === "turn"} onClick={() => choose("turn")}>
-            Бот с очередью реплик
+            {MODE_LABEL.turn}
           </button>
           <button type="button" className={mode === "realtime" ? "is-on" : ""} aria-pressed={mode === "realtime"} onClick={() => choose("realtime")}>
-            Агент реального времени
+            {MODE_LABEL.realtime}
           </button>
         </div>
 
@@ -187,7 +192,7 @@ export default function RealtimeMatters() {
         <footer className="rt-foot">
           <p aria-live="polite">{verdictFor(mode, interrupted)}</p>
           <button type="button" className="lp-btn lp-btn--ghost" onClick={() => setInterrupted(!interrupted)} aria-pressed={interrupted}>
-            {interrupted ? "Дать договорить" : "Перебить"}
+            {INTERRUPT_LABEL[interrupted ? "on" : "off"]}
           </button>
         </footer>
       </div>

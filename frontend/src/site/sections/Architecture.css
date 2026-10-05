@@ -221,6 +221,18 @@
     line-height: 1.5;
     color: var(--lp-muted);
   }
+
+  /* the closing line is a conclusion, not one more part of the stack */
+  .arch-list-back {
+    margin-top: 12px;
+    padding-top: 18px;
+    border-top: 1px solid var(--lp-line-2);
+  }
+
+  .arch-list-back span {
+    border-style: dashed;
+    color: var(--lp-muted);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

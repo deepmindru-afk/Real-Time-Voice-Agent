@@ -1,13 +1,13 @@
-import Link from "../../router/Link.jsx";
-import Arrow from "../Arrow.jsx";
 import { scrollToSection } from "../hooks/scrollTo.js";
+import Arrow from "../Arrow.jsx";
 import OrbAnchor from "../stage/OrbAnchor.jsx";
 import { pulse } from "../stage/bus.js";
 import Reveal from "../Reveal.jsx";
+import { ADDRESS, CITY, FOUNDED, LEGAL, PHONE, SITE } from "../contacts.js";
 import "./CallToAction.css";
 
-// The end of the story. The orb comes back, large, and reacts to the button: the product's own
-// answer to "should I try it?" is to answer you.
+// The end of the story. The orb comes back, large, and reacts to the button: the agency's own
+// answer to "с чего начать" is to pick up the phone.
 export default function CallToAction() {
   return (
     <section className="cta">
@@ -15,40 +15,61 @@ export default function CallToAction() {
 
       <div className="lp-wrap cta-copy">
         <Reveal as="p" className="lp-eyebrow">
-          <b>10</b> Начало работы
+          <b>09</b> Начало работы
         </Reveal>
 
         <Reveal as="h2" className="cta-title" delay={0.08}>
-          Создайте первого <em>голосового агента.</em>
+          Позвоните — <em>начнём с разговора.</em>
         </Reveal>
 
         <Reveal className="cta-actions" delay={0.18}>
-          <Link
-            to="/app/dashboard"
-            transition
-            className="lp-btn lp-btn--primary lp-btn--lg"
+          <a
+            href={PHONE.href}
+            className="lp-btn lp-btn--primary lp-btn--lg lp-btn--phone"
             onPointerEnter={() => pulse(1.1)}
             onFocus={() => pulse(1.1)}
             onPointerDown={() => pulse(1.4)}
           >
-            Начать <Arrow size={20} />
-          </Link>
+            {PHONE.label} <Arrow size={20} />
+          </a>
           <a
-            href="#product"
+            href="#use-cases"
             className="lp-btn lp-btn--ghost lp-btn--lg"
             onPointerEnter={() => pulse(0.5)}
             onClick={(event) => {
               event.preventDefault();
-              scrollToSection("product");
+              scrollToSection("use-cases");
             }}
           >
-            Посмотреть платформу
+            Сначала посмотрите услуги
           </a>
         </Reveal>
 
-        <Reveal as="p" className="cta-note" delay={0.26}>
-          Ничего устанавливать не нужно: консоль работает в браузере, а подключение к вашему Порталу
-          настраивается прямо в ней.
+        <Reveal className="cta-contacts" delay={0.26}>
+          <div className="cta-contact">
+            <b>Головной офис</b>
+            <span>{CITY}, {ADDRESS}</span>
+          </div>
+          <div className="cta-contact">
+            <b>Телефон</b>
+            <a href={PHONE.href}>{PHONE.label}</a>
+          </div>
+          <div className="cta-contact">
+            <b>Сайт</b>
+            <a href={SITE.href} target="_blank" rel="noreferrer">
+              {SITE.label}
+            </a>
+          </div>
+          <div className="cta-contact">
+            <b>Год основания</b>
+            <span>{FOUNDED}</span>
+          </div>
+        </Reveal>
+
+        <Reveal as="p" className="cta-note" delay={0.32}>
+          Расскажите о задаче по телефону или напишите через {SITE.label}. {LEGAL} работает с
+          компаниями и частными клиентами: аудит, стратегия, реализация и сопровождение в одном
+          контуре.
         </Reveal>
       </div>
     </section>

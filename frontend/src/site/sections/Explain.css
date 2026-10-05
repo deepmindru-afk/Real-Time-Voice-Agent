@@ -1,4 +1,5 @@
-/* A tall section holding a sticky screen. Scrolling through it drives --p (0..1). */
+/* A tall section holding a sticky screen. Scrolling through it drives --p (0..1): the statement's
+   words light in turn, the statement lifts away, and the facts follow one by one. */
 .explain {
   position: relative;
   height: 430vh;
@@ -17,113 +18,153 @@
 .explain-inner {
   display: grid;
   gap: clamp(28px, 5vh, 56px);
-  --stmt: clamp(0, calc((var(--p) - 0.36) * 8), 1);
+  --stmt: clamp(0, calc((var(--p) - 0.3) * 8), 1);
+}
+
+.explain-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(32px, 5vw, 88px);
+  align-items: center;
+}
+
+.explain-lede {
+  display: grid;
+  gap: clamp(18px, 2.6vh, 30px);
+  align-content: center;
 }
 
 .explain-statement {
   margin: 0;
-  max-width: 21ch;
-  font-size: clamp(2.2rem, 5.6vw, 5.6rem);
-  line-height: 1;
-  letter-spacing: -0.045em;
+  max-width: 17ch;
+  font-size: clamp(1.9rem, 3.9vw, 3.9rem);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
   font-weight: 540;
+  text-wrap: balance;
   transform-origin: 0 0;
-  transform: translate3d(0, calc(var(--stmt) * -4vh), 0) scale(calc(1 - var(--stmt) * 0.32));
+  transform: translate3d(0, calc(var(--stmt) * -3vh), 0) scale(calc(1 - var(--stmt) * 0.14));
   will-change: transform;
 }
 
 .explain-word {
-  opacity: clamp(0.13, calc(0.13 + (var(--p) * 2.7 - var(--w)) * 10), 1);
+  opacity: clamp(0.14, calc(0.14 + (var(--p) * 2.6 - var(--w)) * 9), 1);
 }
 
-.flow-wrap {
-  position: relative;
-  padding-top: 34px;
+.explain-story {
+  max-width: 52ch;
 }
 
-.flow-line {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 55px;
-  height: 1px;
-  background: var(--lp-line-2);
-}
+/* ------------------------------------------------------------------ facts (the business card) */
 
-.flow-line i {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, var(--lp-accent), var(--lp-accent-hi));
-  box-shadow: 0 0 16px rgba(var(--brand-rgb), 0.9);
-  transform-origin: left;
-  transform: scaleX(clamp(0, calc((var(--p) - 0.5) / 0.44), 1));
-}
-
-.flow {
+.facts {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 16px;
+  gap: 14px;
+  padding: clamp(20px, 2vw, 30px);
+  border: 1px solid var(--lp-line-2);
+  border-radius: 26px;
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(var(--brand-rgb), 0.12), transparent 62%),
+    linear-gradient(180deg, rgba(26, 17, 60, 0.82), rgba(10, 6, 26, 0.9));
+  box-shadow: 0 40px 110px -50px #000;
+}
+
+.facts-title {
+  font: 500 11px/1 var(--font-mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lp-dim);
+}
+
+.facts-list {
+  position: relative;
+  display: grid;
+  gap: 2px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.flow li {
-  --on: clamp(0, calc((var(--p) - var(--s)) * 16), 1);
-
-  display: grid;
-  align-content: start;
-  gap: 10px;
-  opacity: calc(0.22 + var(--on) * 0.78);
-  transform: translate3d(0, calc((1 - var(--on)) * 22px), 0);
+/* the rule grows as the facts light, so the block reads as one table rather than six cards */
+.facts-list::after {
+  content: "";
+  position: absolute;
+  left: 54px;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--lp-accent), var(--lp-accent-hi));
+  box-shadow: 0 0 16px rgba(var(--brand-rgb), 0.9);
+  transform-origin: left;
+  transform: scaleX(clamp(0, calc((var(--p) - 0.44) / 0.5), 1));
 }
 
-.flow-index {
-  position: absolute;
-  top: -34px;
-  font: 500 11px/1 var(--font-mono);
+.fact {
+  --on: clamp(0, calc((var(--p) - var(--s)) * 14), 1);
+
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 14px;
+  padding: 11px 0;
+  border-top: 1px solid var(--lp-line);
+  opacity: calc(0.3 + var(--on) * 0.7);
+}
+
+.fact-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--lp-accent) calc(var(--on) * 65%), var(--lp-line-2));
+  background: color-mix(in srgb, var(--lp-accent) calc(var(--on) * 12%), transparent);
+  color: color-mix(in srgb, var(--lp-accent-hi) calc(var(--on) * 100%), var(--lp-dim));
+  transition: border-color 0.6s, background-color 0.6s, color 0.6s;
+}
+
+.fact-body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.fact-label {
+  font: 500 10.5px/1.2 var(--font-mono);
   letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--lp-dim);
 }
 
-.flow-icon {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1px solid var(--lp-line-2);
-  background: var(--lp-bg);
-  color: var(--lp-muted);
-  transition: color 0.4s, border-color 0.4s, box-shadow 0.4s, background-color 0.4s;
-  margin-top: -22px;
-  position: relative;
-}
-
-.flow li.is-current .flow-icon {
-  color: #120a2e;
-  background: var(--lp-accent);
-  border-color: var(--lp-accent);
-  box-shadow: 0 0 0 8px rgba(var(--brand-rgb), 0.16), 0 0 32px rgba(var(--brand-rgb), 0.7);
-}
-
-.flow li b {
-  margin-top: 10px;
-  font: 500 12px/1.3 var(--font-mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+.fact-value {
+  font-size: 15.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
   color: var(--lp-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
 }
 
-.flow-note {
-  font-size: 13.5px;
-  line-height: 1.45;
-  color: var(--lp-muted);
-  max-width: 19ch;
+a.fact-value {
+  transition: color 0.25s;
 }
 
-/* Below ~1000px seven columns are too tight: stack the story vertically, no pinning, everything lit. */
+a.fact-value:hover {
+  color: var(--lp-accent-hi);
+  text-decoration: underline;
+  text-decoration-color: rgba(var(--brand-rgb), 0.7);
+  text-underline-offset: 3px;
+}
+
+.fact-note {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--lp-dim);
+}
+
+/* ------------------------------------------------------------------ narrow screens: stacked, unpinned */
+
 @media (max-width: 999px) {
   .explain {
     height: auto;
@@ -137,78 +178,30 @@
     overflow: visible;
   }
 
-  .explain-statement {
-    transform: none;
-    max-width: 16ch;
-    font-size: clamp(2.1rem, 9vw, 3.6rem);
-  }
-
-  .flow-wrap {
-    padding: 0 0 0 26px;
-  }
-
-  .flow-line {
-    left: 21px;
-    right: auto;
-    top: 6px;
-    bottom: 6px;
-    width: 1px;
-    height: auto;
-  }
-
-  .flow-line i {
-    transform: none;
-    background: linear-gradient(var(--lp-accent), rgba(var(--brand-rgb), 0.15));
-  }
-
-  .flow {
+  .explain-grid {
     grid-template-columns: 1fr;
-    gap: 26px;
+    gap: 34px;
   }
 
-  .flow li {
-    grid-template-columns: 44px 1fr;
-    grid-template-areas: "icon title" "icon note";
-    column-gap: 18px;
-    row-gap: 4px;
-    opacity: 1;
-    transform: none;
-    margin-left: -26px;
+  .explain-statement {
+    max-width: 18ch;
+    font-size: clamp(1.8rem, 7.4vw, 3rem);
   }
 
-  .flow-index {
+  .facts-list::after {
     display: none;
   }
 
-  .flow-icon {
-    grid-area: icon;
-    margin-top: 0;
-  }
-
-  .flow li b {
-    grid-area: title;
-    margin-top: 6px;
-  }
-
-  .flow-note {
-    grid-area: note;
-    max-width: none;
-  }
-
-  .explain-word {
-    opacity: 1;
-  }
-
-  /* where the browser can scrub animation by scroll, the list still builds in as you read it */
+  /* where the browser can scrub animation by scroll, the facts still build in as you read them */
   @supports (animation-timeline: view()) {
-    .flow li {
-      animation: flow-in linear both;
+    .fact {
+      animation: fact-in linear both;
       animation-timeline: view();
-      animation-range: entry 0% entry 70%;
+      animation-range: entry 0% entry 60%;
     }
 
-    @keyframes flow-in {
-      from { opacity: 0.15; transform: translate3d(0, 22px, 0); }
+    @keyframes fact-in {
+      from { opacity: 0.15; transform: translate3d(0, 20px, 0); }
       to { opacity: 1; transform: none; }
     }
   }
@@ -227,7 +220,7 @@
   }
 
   .explain-statement { transform: none; }
-  .flow li { opacity: 1; transform: none; animation: none; }
   .explain-word { opacity: 1; }
-  .flow-line i { transform: scaleX(1); }
+  .fact { opacity: 1; }
+  .facts-list::after { transform: scaleX(1); }
 }

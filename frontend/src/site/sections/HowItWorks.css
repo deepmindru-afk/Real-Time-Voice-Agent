@@ -1,6 +1,6 @@
 .how {
   position: relative;
-  height: 640vh;
+  height: 560vh;
 }
 
 .how-pin {
@@ -219,7 +219,7 @@
 
 .how-rail {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--n, 6), minmax(0, 1fr));
   gap: 8px;
   margin: 0;
   padding: 0 var(--lp-pad) 28px;
@@ -285,7 +285,7 @@
   max-width: 470px;
 }
 
-/* 1 configure */
+/* sc-config: the brief an audit starts from */
 .sc-config {
   display: grid;
   gap: 14px;
@@ -368,7 +368,7 @@
   to { opacity: 1; transform: none; }
 }
 
-/* 2 connect */
+/* sc-connect: what a plan is built from */
 .sc-connect {
   position: relative;
   aspect-ratio: 4 / 3;
@@ -450,7 +450,7 @@
   animation: ripple 2.6s ease-out infinite;
 }
 
-/* 3 workflows */
+/* sc-flow: the reporting cycle */
 .sc-flow {
   position: relative;
   display: grid;
@@ -514,7 +514,7 @@
   50%, 100% { opacity: 0.55; }
 }
 
-/* 4 deploy */
+/* sc-deploy: going live */
 .sc-deploy {
   position: relative;
   display: grid;
@@ -664,7 +664,7 @@
   22% { transform: scale(1); box-shadow: 0 0 0 16px rgba(var(--brand-rgb), 0); }
 }
 
-/* 5 interact */
+/* sc-talk: agreeing the work before it ships */
 .sc-talk {
   display: grid;
   gap: 12px;
@@ -708,116 +708,6 @@
 }
 
 .how-scene:not(.is-active) .sc-b {
-  opacity: 0;
-}
-
-.sc-talk .wave {
-  height: 42px;
-  margin-top: 6px;
-}
-
-/* 6 analyze */
-.sc-analyze {
-  display: grid;
-  gap: 16px;
-}
-
-.sc-kpis {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-.sc-kpis p {
-  display: grid;
-  gap: 6px;
-  margin: 0;
-  padding: 12px 14px;
-  border: 1px solid var(--lp-line);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.025);
-}
-
-.sc-kpis b {
-  font-size: 24px;
-  font-weight: 540;
-  letter-spacing: -0.04em;
-}
-
-.sc-kpis em {
-  font: 500 10px/1 var(--font-mono);
-  font-style: normal;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--lp-dim);
-}
-
-.sc-bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  height: 100px;
-  padding: 0 4px;
-  border-bottom: 1px solid var(--lp-line-2);
-}
-
-.sc-bars i {
-  flex: 1;
-  height: var(--h);
-  border-radius: 6px 6px 0 0;
-  background: linear-gradient(180deg, var(--lp-accent), rgba(var(--brand-rgb), 0.3));
-  transform-origin: bottom;
-}
-
-.how-scene.is-active .sc-bars i {
-  animation: grow 0.9s var(--ease-out) calc(var(--i) * 0.08s) both;
-}
-
-.how-scene:not(.is-active) .sc-bars i {
-  transform: scaleY(0);
-}
-
-@keyframes grow {
-  from { transform: scaleY(0); }
-  to { transform: scaleY(1); }
-}
-
-.sc-calls {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.sc-calls li {
-  display: grid;
-  grid-template-columns: 8px auto 1fr;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border: 1px solid var(--lp-line);
-  border-radius: 12px;
-  font-size: 13px;
-}
-
-.sc-calls i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--lp-accent);
-}
-
-.sc-calls span {
-  color: var(--lp-muted);
-  text-align: right;
-}
-
-.how-scene.is-active .sc-calls li {
-  animation: msg-in 0.6s var(--ease-out) calc(0.6s + var(--i) * 0.15s) both;
-}
-
-.how-scene:not(.is-active) .sc-calls li {
   opacity: 0;
 }
 

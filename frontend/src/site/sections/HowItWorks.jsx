@@ -1,91 +1,81 @@
 import { useRef } from "react";
 import SiteIcon from "../icons.jsx";
-import Wave from "../Wave.jsx";
 import { stepOf } from "../hooks/progress.js";
 import { useSectionProgress } from "../hooks/useSectionProgress.js";
+import { CITY } from "../contacts.js";
 import "./HowItWorks.css";
 
-// Six steps, each with its own small scene. Scrolling through the pinned section moves from one
+// Five steps, each with its own small scene. Scrolling through the pinned section moves from one
 // to the next; only the active scene animates.
 const STEPS = [
   {
-    id: "configure",
-    title: "Настройка",
-    heading: "Объясните, кто он.",
-    text: "Выберите сценарий, назовите агента и опишите его роль и назначение. Укажите, с кем он говорит, за что отвечает и какие задачи ему можно поручать.",
-    points: ["Сценарий и отрасль", "Название и роль агента", "Назначение и целевые пользователи", "Обязанности и основные задачи"],
-  },
-  {
-    id: "connect",
-    title: "Подключение",
-    heading: "Подключите линию и свои системы.",
-    text: "Выберите, как до него добраться: телефонный номер или ссылка в браузере. Соедините свои системы через API и получайте каждый результат подписанным вебхуком.",
-    points: ["Телефон или ссылка в браузере", "Ваши контакты и данные", "Подписанные вебхуки с результатом"],
-  },
-  {
-    id: "workflows",
-    title: "Сценарии",
-    heading: "Решите, что и когда происходит.",
-    text: "Задайте событие — например, дату в карточке контакта — и то, что агент должен сделать: кому позвонить, зачем и как. Согласие и часы допустимых звонков проверяются до каждого вызова.",
-    points: ["События по датам", "Проверка согласия и часов звонков", "Телефонный или веб-канал"],
-  },
-  {
-    id: "deploy",
-    title: "Запуск",
-    heading: "Включите его.",
-    text: "Когда всё устроит, выполните развёртывание. Агент начинает работать на вашу организацию и сразу может принимать и совершать звонки.",
-    points: ["Одно нажатие для запуска", "Можно остановить и изменить в любой момент", "Сначала проверьте в браузере"],
-  },
-  {
-    id: "interact",
-    title: "Диалог",
-    heading: "Он говорит. Дела сделаны.",
-    text: "Агент разговаривает в реальном времени, ищет данные инструментами и спрашивает перед любыми изменениями. Его можно перебить — он замолчит и выслушает.",
-    points: ["Голос в реальном времени", "Инструменты с подтверждением", "Перебитие из коробки"],
-  },
-  {
-    id: "analyze",
+    id: "audit",
     title: "Анализ",
-    heading: "Виден каждый звонок и его результат.",
-    text: "У каждого звонка есть расшифровка, итог, предпринятые действия и результат. Дашборды показывают, как работает каждый агент.",
-    points: ["Расшифровки и итоги", "Действия и результаты", "Эффективность по каждому агенту"],
+    heading: "Сначала смотрим, что есть.",
+    text: "Начинаем с аудита: чем занимается компания, кто её клиент, какие каналы уже работают и какие данные в ней накоплены.",
+    points: ["Отрасль и задача бизнеса", "Клиенты и конкуренты", "Текущие каналы и данные"],
+  },
+  {
+    id: "plan",
+    title: "Стратегия",
+    heading: "Даём план, а не обещания.",
+    text: "По результатам аудита собираем стратегию: позиционирование, сообщения, каналы, последовательность кампаний, бюджет и сроки. Вы видите план до начала работ.",
+    points: ["Позиционирование и сообщения", "Каналы и календарь кампаний", "Бюджет и сроки работ"],
+  },
+  {
+    id: "work",
+    title: "Реализация",
+    heading: "Делаем и согласуем с вами.",
+    text: "Готовим тексты, макеты, сайты и настройки кампаний. Каждый материал показываем до публикации, правки вносим по вашим замечаниям.",
+    points: ["Контент и креативы", "Сайт и цифровые продукты", "Согласование до запуска"],
+  },
+  {
+    id: "launch",
+    title: "Запуск",
+    heading: "Включаем всё вместе.",
+    text: "Запускаем кампании, подключаем CRM, интеграции и телефонию, переносим накопленные данные. Объясняем вашей команде, как этим пользоваться.",
+    points: ["Кампании и реклама", "CRM, интеграции, телефония", "Обучение вашей команды"],
+  },
+  {
+    id: "measure",
+    title: "Измерение",
+    heading: "Смотрим результат и меняем.",
+    text: "Собираем отчёт по каналам и продуктам, сверяем его с планом и предлагаем, что менять дальше. Сопровождение продолжается, пока оно нужно.",
+    points: ["Отчёт по каналам и продуктам", "Сравнение с планом", "Гипотезы на следующий период"],
   },
 ];
 
 function Scene({ id }) {
   switch (id) {
-    case "configure":
+    case "audit":
       return (
         <div className="sc-config">
           <div className="sc-row">
-            <label>Сценарий</label>
-            <span className="sc-select">Медицина</span>
+            <label>Отрасль</label>
+            <span className="sc-select">Услуги</span>
           </div>
           <div className="sc-row">
-            <label>Название агента</label>
-            <span className="sc-type" style={{ "--n": 8 }}>АссистентПортал</span>
+            <label>Задача</label>
+            <span className="sc-type" style={{ "--n": 25, "--t": "0.7s" }}>Больше заявок из интернета</span>
           </div>
           <div className="sc-row">
-            <label>Роль агента</label>
-            <span className="sc-type" style={{ "--n": 25, "--t": "0.7s" }}>Координатор приёма</span>
-          </div>
-          <div className="sc-row">
-            <label>Целевые пользователи</label>
+            <label>Каналы сейчас</label>
             <span className="sc-chips">
-              <b style={{ "--i": 0 }}>Пациенты</b>
-              <b style={{ "--i": 1 }}>Родственники</b>
+              <b style={{ "--i": 0 }}>Сайт</b>
+              <b style={{ "--i": 1 }}>Соцсети</b>
             </span>
           </div>
           <div className="sc-row">
-            <label>Основные задачи</label>
+            <label>Данные</label>
             <span className="sc-chips">
-              <b style={{ "--i": 2 }}>Записывать на приём</b>
-              <b style={{ "--i": 3 }}>Отвечать на вопросы</b>
+              <b style={{ "--i": 2 }}>CRM</b>
+              <b style={{ "--i": 3 }}>1С</b>
+              <b style={{ "--i": 4 }}>Телефония</b>
             </span>
           </div>
         </div>
       );
-    case "connect":
+    case "plan":
       return (
         <div className="sc-connect">
           <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
@@ -94,29 +84,63 @@ function Scene({ id }) {
             <path pathLength="1" d="M200 150 L 282 150" />
           </svg>
           <span className="sc-node" style={{ left: "4%", top: "17%" }}>
-            <SiteIcon name="phone" size={16} /> Телефонная линия
+            <SiteIcon name="user" size={16} /> Задача бизнеса
           </span>
           <span className="sc-node" style={{ left: "4%", top: "68%" }}>
-            <SiteIcon name="plug" size={16} /> Ссылка в браузере
+            <SiteIcon name="chart" size={16} /> Данные аудита
           </span>
           <span className="sc-hub">
             <i />
-            <SiteIcon name="agent" size={26} />
+            <SiteIcon name="branch" size={26} />
           </span>
           <span className="sc-node sc-node--right" style={{ right: "3%", top: "43%" }}>
-            <SiteIcon name="workflow" size={16} /> Ваши системы
-            <small>API · вебхуки</small>
+            <SiteIcon name="sliders" size={16} /> План работ
+            <small>каналы · бюджет · сроки</small>
           </span>
         </div>
       );
-    case "workflows":
+    case "work":
+      return (
+        <div className="sc-talk">
+          <p className="sc-b sc-b--user" style={{ "--i": 0 }}>Нужен новый сайт и заявки из рекламы.</p>
+          <p className="sc-b sc-b--agent" style={{ "--i": 1 }}>Соберём структуру и покажем макет до сборки.</p>
+          <p className="sc-b sc-b--user" style={{ "--i": 2 }}>Берём этот вариант.</p>
+          <p className="sc-b sc-b--done" style={{ "--i": 3 }}>
+            <SiteIcon name="check" size={14} /> Согласовано · макет
+          </p>
+        </div>
+      );
+    case "launch":
+      return (
+        <div className="sc-deploy">
+          <span className="sc-deploy-ring" />
+          <span className="sc-deploy-ring" style={{ "--d": "1.2s" }} />
+          <div className="sc-deploy-card">
+            <span className="sc-deploy-av">
+              <SiteIcon name="rocket" size={22} />
+            </span>
+            <span>
+              <b>Маркетинг и IT</b>
+              <em>Проект под задачу клиента · {CITY}</em>
+            </span>
+            <span className="sc-status">
+              <i /> <span className="sc-status-a">Черновик</span>
+              <span className="sc-status-b">Работает</span>
+            </span>
+          </div>
+          <span className="sc-deploy-btn">
+            <SiteIcon name="rocket" size={16} /> Запустить работы
+          </span>
+        </div>
+      );
+    default:
       return (
         <ol className="sc-flow">
           {[
-            ["calendar", "Событие", "за 3 дня до приёма"],
-            ["check", "Допуск", "согласие получено · в рабочие часы"],
-            ["phone", "Звонок", "агент звонит контакту"],
-            ["chart", "Результат", "итог зафиксирован и передан"],
+            ["chart", "Срез данных", "по каналам и продуктам"],
+            ["layout", "Отчёт", "что сработало, а что нет"],
+            ["brain", "Гипотезы", "что проверить дальше"],
+            ["check", "Следующий период", "план работ на основе выводов"],
           ].map(([icon, label, note], index) => (
             <li key={label} style={{ "--i": index }}>
               <span>
@@ -127,78 +151,6 @@ function Scene({ id }) {
             </li>
           ))}
         </ol>
-      );
-    case "deploy":
-      return (
-        <div className="sc-deploy">
-          <span className="sc-deploy-ring" />
-          <span className="sc-deploy-ring" style={{ "--d": "1.2s" }} />
-          <div className="sc-deploy-card">
-            <span className="sc-deploy-av">
-              <SiteIcon name="agent" size={22} />
-            </span>
-            <span>
-              <b>АссистентПортал</b>
-              <em>Координатор приёма</em>
-            </span>
-            <span className="sc-status">
-              <i /> <span className="sc-status-a">Черновик</span>
-              <span className="sc-status-b">Работает</span>
-            </span>
-          </div>
-          <span className="sc-deploy-btn">
-            <SiteIcon name="rocket" size={16} /> Развернуть агента
-          </span>
-        </div>
-      );
-    case "interact":
-      return (
-        <div className="sc-talk">
-          <p className="sc-b sc-b--user" style={{ "--i": 0 }}>Можно перенести мой приём?</p>
-          <p className="sc-b sc-b--agent" style={{ "--i": 1 }}>Конечно. Подойдёт четверг на 15:00?</p>
-          <p className="sc-b sc-b--user" style={{ "--i": 2 }}>Да, отлично.</p>
-          <p className="sc-b sc-b--done" style={{ "--i": 3 }}>
-            <SiteIcon name="check" size={14} /> Перенесено · Чт 15:00
-          </p>
-          <Wave level={0.5} bars={28} />
-        </div>
-      );
-    default:
-      return (
-        <div className="sc-analyze">
-          <div className="sc-kpis">
-            <p>
-              <b>128</b>
-              <em>Звонков</em>
-            </p>
-            <p>
-              <b>94%</b>
-              <em>Завершено</em>
-            </p>
-            <p>
-              <b>71</b>
-              <em>Задач</em>
-            </p>
-          </div>
-          <div className="sc-bars">
-            {[38, 52, 44, 68, 60, 82, 74].map((height, index) => (
-              <i key={index} style={{ "--h": `${height}%`, "--i": index }} />
-            ))}
-          </div>
-          <ul className="sc-calls">
-            {[
-              ["Прия Ш.", "Приём записан"],
-              ["Рахул М.", "Напоминание подтверждено"],
-              ["Анита К.", "Запрошен перенос"],
-            ].map(([who, what], index) => (
-              <li key={who} style={{ "--i": index }}>
-                <i />
-                <b>{who}</b>
-                <span>{what}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
       );
   }
 }
@@ -233,15 +185,15 @@ export default function HowItWorks() {
   };
 
   return (
-    <section ref={ref} className="how" data-step="0" style={{ "--p": 0, "--step": 0 }}>
+    <section ref={ref} className="how" data-step="0" style={{ "--p": 0, "--step": 0, "--n": STEPS.length }}>
       <div className="how-pin">
         <div className="lp-wrap how-grid">
           <div className="how-left">
             <p className="lp-eyebrow">
-              <b>05</b> Как это работает
+              <b>05</b> Как мы работаем
             </p>
             <h2 className="lp-h2">
-              От идеи до <em>работающего агента</em> за шесть шагов.
+              Пять шагов <em>от аудита до отчёта.</em>
             </h2>
 
             <div className="how-count" aria-hidden="true">
@@ -252,7 +204,7 @@ export default function HowItWorks() {
                   ))}
                 </span>
               </span>
-              <i>/ 06</i>
+              <i>/ {String(STEPS.length).padStart(2, "0")}</i>
             </div>
 
             <div className="how-copy">
@@ -291,7 +243,7 @@ export default function HowItWorks() {
           </div>
         </div>
 
-        <ol className="how-rail" aria-label="Шаги">
+        <ol className="how-rail" aria-label="Шаги работы">
           {STEPS.map((step, index) => (
             <li key={step.id} data-i={index} className={index === 0 ? "is-active" : ""}>
               <button type="button" onClick={() => go(index)}>

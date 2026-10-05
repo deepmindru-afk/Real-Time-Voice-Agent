@@ -197,6 +197,12 @@
   transform: translateY(-2px);
 }
 
+/* a phone number is digits: keep them aligned and let them breathe a little wider */
+.lp-btn--phone {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
 /* ------------------------------------------------------------------ reveal */
 
 .rv {
@@ -413,7 +419,9 @@
   display: none;
 }
 
-@media (max-width: 860px) {
+/* Four section links plus the brand and the button stop fitting well before the phone widths:
+   the links move into the sheet instead of colliding with either of them. */
+@media (max-width: 1000px) {
   .lp-nav-links,
   .lp-nav-actions {
     display: none;
@@ -535,6 +543,19 @@
   justify-content: space-between;
   gap: 18px 32px;
   font-size: 13px;
+  color: var(--lp-dim);
+}
+
+.lp-footer .lp-brand {
+  font-size: 14px;
+}
+
+.lp-footer-note {
+  width: 100%;
+  margin: 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--lp-line);
+  font-size: 12.5px;
   color: var(--lp-dim);
 }
 

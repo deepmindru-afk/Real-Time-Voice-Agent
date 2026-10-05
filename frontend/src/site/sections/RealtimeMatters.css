@@ -134,9 +134,9 @@
   opacity: 1;
 }
 
-/* what a turn-based caller hears between speaking and being answered */
+/* what a client waits through while the two vendors hand work over */
 .rt-lane--respond .rt-track::before {
-  content: "Silence. The caller waits";
+  content: "Пауза: ждут друг друга";
   position: absolute;
   top: 0;
   bottom: 0;

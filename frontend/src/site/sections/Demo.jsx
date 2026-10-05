@@ -24,9 +24,9 @@ const ORB_MODE = { idle: "idle", listening: "listening", thinking: "thinking", s
 
 const LEGEND = [
   ["listening", "Слышит вас в реальном времени."],
-  ["thinking", "Разбирает, что вы имеете в виду."],
-  ["acting", "Проверяет и выполняет — по вашим данным."],
-  ["speaking", "Отвечает естественным голосом."],
+  ["thinking", "Разбирает запрос и уточняет детали."],
+  ["acting", "Проверяет данные по вашим системам."],
+  ["speaking", "Отвечает голосом, не записывая на приём."],
 ];
 
 const clock = (ms) => {
@@ -72,7 +72,7 @@ function Message({ entry }) {
 
   return (
     <div className={`msg ${isAgent ? "msg--agent" : "msg--user"}`}>
-      <span className="msg-who">{isAgent ? "Агент" : "Звонящий"}</span>
+      <span className="msg-who">{isAgent ? "Ассистент" : "Клиент"}</span>
       {phase === "lead" ? (
         <p className="msg-dots" aria-label={isAgent ? "Думает" : "Слушает"}>
           <i />
@@ -131,14 +131,18 @@ export default function Demo() {
       <div className="lp-wrap demo-grid">
         <div className="demo-copy">
           <p className="lp-eyebrow">
-            <b>03</b> Живая демонстрация
+            <b>03</b> Наша технология
           </p>
           <h2 className="lp-h2">
-            Послушайте, как он <em>работает.</em>
+            Здесь работает <em>наша</em> разработка.
           </h2>
-          <p className="lp-lead">Одна запись к врачу, от начала до конца. Он слушает, понимает, проверяет расписание, спрашивает перед записью и подтверждает результат. Всё это — в одном естественном разговоре.</p>
+          <p className="lp-lead">
+            На этой странице уже подключён голосовой ИИ-ассистент FALX. Нажмите на шар — и говорите: он
+            услышит, разберётся в запросе и ответит голосом, как в обычном разговоре. Ничего
+            устанавливать не нужно.
+          </p>
 
-          <ul className="demo-legend" aria-label="Что делает агент">
+          <ul className="demo-legend" aria-label="Что делает ассистент">
             {LEGEND.map(([status, text]) => (
               <li key={status} className={frame.status === status ? "is-on" : ""}>
                 <i aria-hidden="true" />
@@ -150,17 +154,17 @@ export default function Demo() {
 
           <OrbAnchor name="demo" className="demo-orb" />
 
-          <p className="demo-note">Сценарная иллюстрация одного звонка. Ваш агент работает по вашим собственным данным и правилам.</p>
+          <p className="demo-note">Рядом — сценарийная иллюстрация одного звонка. Настоящий ассистент отвечает на ваш голос: нажмите на шар и скажите, что вам нужно.</p>
         </div>
 
-        <div className={`demo-card is-${frame.status}`} role="group" aria-label="Имитация звонка между звонящим и голосовым агентом">
+        <div className={`demo-card is-${frame.status}`} role="group" aria-label="Имитация звонка между клиентом и голосовым ассистентом">
           <header className="demo-head">
             <span className="demo-avatar">
               <Logo size={20} />
             </span>
             <span className="demo-who">
-              <b>Ассистент на ресепшене</b>
-              <span>Входящий звонок · запись на приём</span>
+              <b>Голосовой ассистент FALX</b>
+              <span>Сценарий: запись на приём</span>
             </span>
             <span className="demo-status" role="status">
               <i aria-hidden="true" />
